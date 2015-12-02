@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"$if(lang)$ lang="$lang$" xml:lang="$lang$"$endif$>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+$for(author-meta)$
+  <meta name="author" content="$author-meta$" />
+$endfor$
+$if(date-meta)$
+  <meta name="date" content="$date-meta$" />
+$endif$
+  <title>$if(title-prefix)$$title-prefix$ - $endif$$pagetitle$</title>
+
+  <!-- add -->
+  <style type="text/css">
+    pre {
+        background-color : #F0F8F0;
+        border : 1px solid black;
+        padding : 5px;
+        white-space: pre-wrap;
+        word-wrap : break-word;/*for IE*/
+        /*font-size : 100%;*/
+        /*font-family : 'Courier New', Consolas, 'Droid Sans Mono', 'Fixedsys', monospace;*/
+    }
+    code {
+        font-family : Consolas, SimHei, 'Courier New', monospace;
+        font-size : 100%;
+        color : #7F0000;
+    }
+    pre code {
+       color : black;
+       font-size : 90%;
+    }
+    table, th, td {
+        border: 1px solid black;
+    }
+    table {
+        margin-left : auto;
+        margin-right : auto;
+        margin-top : 20px;
+        margin-bottom : 20px;
+        border-collapse:collapse;
+        width : 100%;
+    }
+    th, td {
+        padding : 5px;
+    }
+    caption {
+        font-weight : bold;
+        margin-bottom : 10px;
+    }
+    img {
+        max-width : 100%;
+        height : auto;
+    }
+    blockquote {
+        font-family : 'Arial', KaiTi, sans-serif;
+        color : #404040;
+        border : dashed 1px black;
+        background-color : #F0F0FF;
+        padding : 10px;
+    }
+    .caption {
+        font-weight : bold;
+        text-align: center;
+    }
+    body.main {
+        margin : auto;
+        max-width : 800px;
+        font-family : 'Times New Roman', NSimSun, serif;
+    }
+    div.toc {
+        border-width : 1px;
+        border-style : dashed;
+    }
+    h1.title, h1.subtitle, h2.author, h3.date {
+        text-align : center;
+    }
+    $if(indent)$
+    p {
+        text-indent: 2em;
+    }
+    li p { /* p in li not indent */
+        text-indent: 0em;
+    }
+    $endif$
+  </style>
+
+$if(quotes)$
+  <style type="text/css">q { quotes: "“" "”" "‘" "’"; }</style>
+$endif$
+$if(highlighting-css)$
+  <style type="text/css">
+$highlighting-css$
+  </style>
+$endif$
+$for(css)$
+  <link rel="stylesheet" href="$css$" $if(html5)$$else$type="text/css" $endif$/>
+$endfor$
+$if(math)$
+  $math$
+$endif$
+$for(header-includes)$
+  $header-includes$
+$endfor$
+</head>
+<body class="main">
+$for(include-before)$
+$include-before$
+$endfor$
+$if(title)$
+<div id="$idprefix$header">
+<h1 class="title">$title$</h1>
+$if(subtitle)$
+<h1 class="subtitle">$subtitle$</h1>
+$endif$
+$for(author)$
+<h2 class="author">$author$</h2>
+$endfor$
+$if(date)$
+<h3 class="date">$date$</h3>
+$endif$
+</div>
+$endif$
+$if(toc)$
+<div id="$idprefix$TOC" class="toc">
+$toc$
+</div>
+$endif$
+$body$
+$for(include-after)$
+$include-after$
+$endfor$
+</body>
+</html>

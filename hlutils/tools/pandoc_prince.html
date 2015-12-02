@@ -1,0 +1,198 @@
+<html $if(lang)$ lang="$lang$" xml:lang="$lang$"$endif$>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+$for(author-meta)$
+  <meta name="author" content="$author-meta$" />
+$endfor$
+$if(date-meta)$
+  <meta name="date" content="$date-meta$" />
+$endif$
+  <title>$if(title-prefix)$$title-prefix$ - $endif$$pagetitle$</title>
+
+  <!-- add -->
+  <style type="text/css">
+    @page {
+        size: A4;
+
+        @top-left {
+            content : "$title$";
+            font-family : 'Times New Roman', nSimSun, serif;
+            font-style : italic;
+            font-size : 80%;
+        }
+        @top-right{
+            content : "$author$";
+            font-family : 'Times New Roman', nSimSun, serif;
+            font-style : italic;
+            font-size : 80%;
+        }
+        @bottom-center {
+            content : "- " counter(page) " -";
+            font-family : 'Times New Roman', nSimSun, serif;
+            font-style : italic;
+            font-size : 80%;
+        }
+        @footnotes {
+        border-top: solid black thin;
+        padding-top: 8pt;
+    }
+    }
+    $if(breakfirst)$
+    @page:first {
+        @top-left { content: normal }
+        @top-right { content: normal }
+        @bottom-center { content: normal }
+    }
+    h1 {
+        counter-reset : footnote ;
+    }
+    $endif$
+    pre {
+        background-color : #F0F8F0;
+        border : 1px solid black;
+        padding : 5px;
+        white-space: pre-wrap;
+        word-wrap : break-word;/*for IE*/
+        /*font-family : 'Courier New', Consolas, nSimSun, monospace;*/
+        line-height : 100%;
+    }
+    code {
+        font-size : 100%;
+        color : #7F0000;
+        font-family : Consolas, SimHei, 'Courier New', monospace;
+    }
+    pre code {
+        color : black;
+        font-size : 80%;
+    }
+    
+    table, th, td {
+        border: 1px solid black;
+    }
+    table {
+        margin-left : auto;
+        margin-right : auto;
+        margin-top : 20px;
+        margin-bottom : 20px;
+        border-collapse:collapse;
+        /*table-layout:fixed;*/
+        $if(autotablewidth)$
+        $else$
+        width : 100%;
+        $endif$
+    }
+    th, td {
+        padding : 5px;
+    }
+    caption {
+        font-weight : bold;
+        margin-bottom : 10px;
+    }
+    img {
+        max-width : 100%;
+        height : auto;
+    }
+    blockquote {
+        font-family : 'Arial', KaiTi, sans-serif;
+        background-color : #F0F0FF;
+        border : 1px dashed black;
+        padding:10px;
+    }
+    .caption {
+        font-weight : bold;
+        text-align: center;
+    }
+    body.main {
+        margin : auto;
+        font-family : 'Times New Roman', NSimSun, serif;
+        font-size : 80%;
+    }
+    div.toc {
+        border-width : 1px;
+        border-style : dashed;
+        page-break-before: always;
+    }
+    h1.title, h1.subtitle, h2.author, h3.date {
+        text-align : center;
+    }
+
+    .fn {
+        float : footnote;
+        counter-increment: footnote;
+        font-size : 80%;
+    }
+
+    $if(breakfirst)$
+    div.body {
+        page-break-before: always;
+        counter-reset: page 1;
+    }
+    $endif$
+    $if(breakchapter)$
+    h1 {
+        page-break-before: always;
+    }
+    $endif$
+
+    $if(indent)$
+    p {
+        text-indent: 2em;
+    }
+    li p { /* p in li not indent */
+        text-indent: 0em;
+    }
+    $endif$
+  </style>
+
+$if(quotes)$
+  <style type="text/css">q { quotes: "“" "”" "‘" "’"; }</style>
+$endif$
+$if(highlighting-css)$
+  <style type="text/css">
+$highlighting-css$
+  </style>
+$endif$
+$for(css)$
+  <link rel="stylesheet" href="$css$" $if(html5)$$else$type="text/css" $endif$/>
+$endfor$
+$if(math)$
+  $math$
+$endif$
+$for(header-includes)$
+  $header-includes$
+$endfor$
+</head>
+<body class="main">
+$for(include-before)$
+$include-before$
+$endfor$
+$if(title)$
+<div class="header" id="$idprefix$header">
+<h1 class="title">$title$</h1>
+$if(subtitle)$
+<h1 class="subtitle">$subtitle$</h1>
+$endif$
+$for(author)$
+<h2 class="author">$author$</h2>
+$endfor$
+$if(date)$
+<h3 class="date">$date$</h3>
+$endif$
+</div>
+$endif$
+$if(toc)$
+<div id="$idprefix$TOC" class="toc">
+$toc$
+</div>
+$endif$
+<div class="body">
+$body$
+$for(include-after)$
+$include-after$
+$endfor$
+</div>
+</body>
+</html>
+
