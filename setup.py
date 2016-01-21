@@ -29,7 +29,7 @@ setup(
     author_email='huleiak47@gmail.com',
     packages=['hlutils', 'hlutils.tools'],
     package_dir={'hlutils': './hlutils', 'hlutils.tools': './hlutils/tools'},
-    package_data={"hlutils.tools": ["*.html"]},
+    package_data={"hlutils.tools": ["*.html", "*.docx"]},
     entry_points={
         "console_scripts": consoles,
     }

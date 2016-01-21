@@ -51,7 +51,7 @@ def parse_cmdline():
         '--filter', '-l', default="", help='指定一个命令来过滤生成的html，从STDIN读入，从STDOUT输出（对html与pdf有效）'
     )
     parser.add_argument(
-        '--template', '-T', default="", help="指定一个html的模板文件（对html与pdf有效）"
+        '--template', '-T', default="", help="指定一个模板文件（对html与pdf应该是一个html模板，对docx应该是一个docx模板）"
     )
     parser.add_argument(
         '--variable', '-V', action = "append", help="指定传给pandoc的变量，见pandoc的帮助"
@@ -203,6 +203,10 @@ def gen_docx(ns):
     if ns.variable:
         for v in ns.variable:
             cmds += ["-V", v]
+    if ns.template:
+        cmds.append("--reference-docx=" + ns.template)
+    else:
+        cmds.append("--reference-docx=" + os.path.join(os.path.dirname(__file__), "pandoc_refer.docx"))
     if not ns.outfile:
         ns.outfile = mdfile + ".docx"
     cmds += ["-o", ns.outfile, mdfile]
