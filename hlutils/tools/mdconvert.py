@@ -20,48 +20,48 @@ def parse_cmdline():
             "html",
             "docx"],
         default="html",
-        help="转换到文件格式")
+        help=u"转换到文件格式")
     parser.add_argument(
         "--toc",
         "-t",
         action="store_true",
-        help="在正文前包含目录（对docx无效）")
+        help=u"在正文前包含目录（对docx无效）")
     parser.add_argument(
         "--number",
         "-n",
         action="store_true",
-        help="在标题前显示编号（对docx无效）")
+        help=u"在标题前显示编号（对docx无效）")
     parser.add_argument(
         "--indent",
         "-i",
         action='store_true',
-        help='在段落前缩进两个字符（建议中文文档设置，对docx无效）')
+        help=u'在段落前缩进两个字符（建议中文文档设置，对docx无效）')
     parser.add_argument(
         '--breakfirst',
         '-F',
         action='store_true',
-        help='标题页单独占一页（只对pdf有效）')
+        help=u'标题页单独占一页（只对pdf有效）')
     parser.add_argument(
         '--breakchapter',
         '-C',
         action='store_true',
-        help='每一章单独从新页开始（只对pdf有效）')
+        help=u'每一章单独从新页开始（只对pdf有效）')
     parser.add_argument(
-        '--filter', '-l', default="", help='指定一个命令来过滤生成的html，从STDIN读入，从STDOUT输出（对html与pdf有效）'
+        '--filter', '-l', default="", help=u'指定一个命令来过滤生成的html，从STDIN读入，从STDOUT输出（对html与pdf有效）'
     )
     parser.add_argument(
-        '--template', '-T', default="", help="指定一个模板文件（对html与pdf应该是一个html模板，对docx应该是一个docx模板）"
+        '--template', '-T', default="", help=u"指定一个模板文件（对html与pdf应该是一个html模板，对docx应该是一个docx模板）"
     )
     parser.add_argument(
-        '--variable', '-V', action = "append", help="指定传给pandoc的变量，见pandoc的帮助"
+        '--variable', '-V', action = "append", help=u"指定传给pandoc的变量，见pandoc的帮助"
         )
     parser.add_argument(
         '--outfile',
         '-o',
         action='store',
         default=None,
-        help='设置输出文件名，默认使用源文件名（包括路径）加相应后缀')
-    parser.add_argument("mdfile", nargs=1, help="Markdown文件")
+        help=u'设置输出文件名，默认使用源文件名（包括路径）加相应后缀')
+    parser.add_argument("mdfile", nargs=1, help=u"Markdown文件")
 
     return parser.parse_args(sys.argv[1:])
 
