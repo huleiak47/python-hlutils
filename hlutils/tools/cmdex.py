@@ -4,6 +4,9 @@ r'''
 An enhanced console for replacing cmd.exe.
 '''
 # Changes:
+#   ** version 1.0.12 2016-04-11 Hulei **
+#       1. 使用prompt_toolkit代替readline库
+#
 #   ** version 1.0.11 2015-03-26 Hulei **
 #       1. 修正了命令行解析较复杂时不正常的问题
 #
@@ -42,7 +45,9 @@ An enhanced console for replacing cmd.exe.
 #   ** version 1.0 2014-02-12 Hulei **
 #       1. first version
 
-__version__ = "1.0.11"
+from __future__ import unicode_literals
+
+__version__ = "1.0.12"
 
 import os
 import sys
@@ -50,10 +55,17 @@ import time
 import subprocess as sp
 import ctypes
 import re
-import readline
 import random
 
 os.environ["PATHEXT"] = ".COM;.EXE;.BAT;.PY"
+
+from prompt_toolkit.contrib.completers import SystemCompleter, WordCompleter
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import Completer
+from prompt_toolkit.shortcuts import print_tokens
+from prompt_toolkit.styles import style_from_dict
+from prompt_toolkit.token import Token
+from prompt_toolkit.history import InMemoryHistory
 
 CMDEXE_INT_CMDS = [
     "copy",
@@ -81,7 +93,27 @@ CMDEXE_INT_CMDS = [
     "title",
     "type",
     "dir",
+    "exit",
+    "quit",
+    "set",
+    "env",
 ]
+
+
+class CmdExCompleter(Completer):
+
+    def __init__(self):
+        #self.word_completer = WordCompleter(CMDEXE_INT_CMDS, ignore_case=True)
+        self.sys_completer = SystemCompleter()
+
+    def get_completions(self, document, complete_event):
+        # for cmp in self.word_completer.get_completions(
+                # document, complete_event):
+            # yield cmp
+        for cmp in self.sys_completer.get_completions(
+                document, complete_event):
+            yield cmp
+
 
 def dprint(msg):
     if 0:
@@ -89,103 +121,8 @@ def dprint(msg):
             print >> f, msg
     pass
 
-class Completer(object):
-    def __init__(self):
-        self.__matches = []
 
-    def to_pattern(self, item):
-        ret = []
-        for c in item:
-            if c in u".^$+{}[]()|\\#":
-                ret.append(u"\\")
-                ret.append(c)
-            elif c == u"*":
-                ret.append(u".*")
-            elif c == u"?":
-                ret.append(u".")
-            else:
-                ret.append(c)
-        return "".join(ret)
-
-    def find_files(self, text):
-        dprint("text:"+ repr(text))
-        self.__matches = []
-        items = text.replace(u"\\", u"/").split(u"/")
-        dprint("items:" + repr(items))
-        if len(items) == 1:
-            dirname = u"./"
-        else:
-            dirname = u"/".join(items[:-1]) + u"/"
-        dprint("dir: "+dirname)
-        if os.path.isdir(dirname):
-            item = items[-1].lower()
-            regex = re.compile(self.to_pattern(item), re.IGNORECASE)
-            files = os.listdir(dirname)
-            prefix = text[:len(text)-len(item)]
-            for f in files:
-                if regex.match(f):
-                    self.__matches.append(prefix + f)
-        #dprint(str(self.__matches))
-
-    def find_global_prg(self, text):
-        matches = []
-        regex = re.compile(self.to_pattern(text), re.IGNORECASE)
-        exts = os.environ.get("PATHEXT").lower().split(";")
-        exts = [ext.lower() for ext in exts]
-        paths = os.environ.get("PATH").split(";")
-        for cmd in CMDEXE_INT_CMDS + _InternalCmds.keys():
-            if regex.match(cmd):
-                matches.append(cmd)
-        for p in paths:
-            if not os.path.isdir(p):
-                continue
-            for f in os.listdir(p):
-                for ext in exts:
-                    if f.lower().endswith(ext) and regex.match(f) and os.path.isfile(os.path.join(p, f)):
-                        base = os.path.splitext(f)[0]
-                        if base not in matches:
-                            matches.append(base)
-                        break
-        self.find_files(text)
-        self.__matches += matches
-
-    def __call__(self, text, state):
-        if state == 0:
-            buf = readline.rl.get_line_buffer()
-            dprint("buf: " + repr(buf))
-            if len(text) > 0:
-                buf = buf[:-len(text)]
-            if readline.rl.mode.begidx == 0:
-                self.find_global_prg(text)
-            elif re.match(ur'''.*(\||\|\||&&)\s*(?:pyargs|xargs )?\s*$''', buf):
-                self.find_global_prg(text)
-            else:
-                self.find_files(text)
-        try:
-            return self.__matches[state]
-        except Exception:
-            return None
-
-def init_readline():
-    readline.set_completer(Completer())
-    readline.set_completer_delims(" \t\n\"@;")
-    readline.parse_and_bind("tab: complete")
-    HOMEDIR = os.environ.get("HOME")
-    if not HOMEDIR:
-        HOMEDIR = os.environ.get("USERPROFILE", ".")
-    histdir = HOMEDIR + "/.cmdexhist"
-    if os.path.isfile(histdir):
-        os.remove(histdir)
-    if not os.path.isdir(histdir):
-        os.mkdir(histdir)
-    cwd = os.getcwd().replace("\\", "+").replace(":", "=")
-    readline.read_history_file(histdir + "/%s.hist" % cwd)
-    def on_exit():
-        readline.write_history_file(histdir + "/%s.hist" % cwd)
-    import atexit
-    atexit.register(on_exit)
-
-def ch_title(title = None):
+def ch_title(title=None):
     if title:
         ctypes.windll.kernel32.SetConsoleTitleW(unicode(title))
     else:
@@ -194,33 +131,39 @@ def ch_title(title = None):
         cwds.reverse()
         ctypes.windll.kernel32.SetConsoleTitleW(u"/".join(cwds) + u" - CMDEX")
 
+
 def dump_banner():
     print """cmdex.py %s  An enhanced console
     """ % __version__
 
+
 def init():
-    init_readline()
     ch_title()
     dump_banner()
     os.environ["ERRORLEVELEX"] = "0"
 
 ##-------------------------------##
 
+
 def process_exit(cmd):
     "exit"
     sys.exit(0)
 
 _last_cwd = os.getcwd()
+
+
 def _ch_dir(cwd):
     global _last_cwd
     _last_cwd = os.getcwd()
     os.chdir(cwd)
     ch_title()
 
+
 def expand_env(param):
     def repl(mobj):
         return os.environ.get(mobj.group(0)[1:-1], mobj.group(0))
     return re.sub(r"%[^%]*%", repl, param)
+
 
 def process_cd(cmd):
     "change current directory"
@@ -240,13 +183,13 @@ def process_cd(cmd):
         else:
             _ch_dir(os.path.abspath(param))
 
+
 def process_set(cmd):
     "set environment variables"
     params = re.split(r"\s+", cmd, 1)
     if len(params) == 1 or params[1] == "":
-        #dump_env
-        keys = os.environ.keys()
-        keys.sort()
+        # dump_env
+        keys = sorted(os.environ.keys())
         for key in keys:
             print key, "=", os.environ[key]
     else:
@@ -265,13 +208,14 @@ def process_set(cmd):
                 print "Environment variable '%s' is not defined." % param
 
 _InternalCmds = {
-    "q" : process_exit,
-    "exit" : process_exit,
-    "quit" : process_exit,
-    "cd" : process_cd,
-    "set" : process_set,
-    "env" : process_set,
+    "q": process_exit,
+    "exit": process_exit,
+    "quit": process_exit,
+    "cd": process_cd,
+    "set": process_set,
+    "env": process_set,
 }
+
 
 def filter_cmd(cmd):
     "filter internal command"
@@ -281,6 +225,7 @@ def filter_cmd(cmd):
         return True
     else:
         return False
+
 
 def split_cmd_args(cmd):
     end = 0
@@ -307,11 +252,15 @@ set > "{1}.env"
 
 exit %RETCODE%
 """
+
+
 def replace_batch_file(cmdf):
-    tempfile = os.environ.get("TEMP", ".") + "\\cmdex_%d.bat" % random.randint(100000, 999999)
+    tempfile = os.environ.get("TEMP", ".") + \
+        "\\cmdex_%d.bat" % random.randint(100000, 999999)
     with open(tempfile, "w") as f:
         f.write(BAT_TEMPLATE.format(cmdf, tempfile))
     return tempfile
+
 
 def update_batch_env():
     global g_batch
@@ -332,6 +281,7 @@ def update_batch_env():
     except:
         pass
     g_batch = None
+
 
 def expand_exefile(cmdf):
     dprint("exefile is: " + cmdf)
@@ -370,31 +320,38 @@ import ply.lex as lex
 
 tokens = ("SPACE", "LOGIC", "PIPE", "DQSTRING", "STRING")
 
+
 def t_DQSTRING(t):
     r'''(\\\\)*"(\\\\|\\"|""|[^"])*("|$)'''
     return t
+
 
 def t_LOGIC(t):
     r"\|\||&&|&"
     return t
 
+
 def t_PIPE(t):
     r"\|"
     return t
+
 
 def t_SPACE(t):
     r"[ \t]+"
     return t
 
+
 def t_STRING(t):
     r"[^ \t\"]+"
     return t
+
 
 def t_error(t):
     print "Illegal char '%s'" % t.value[0]
     t.lexer.skip(1)
 
 lexer = lex.lex()
+
 
 def preproc_exefile(cmd):
     lexer.input(cmd)
@@ -404,7 +361,7 @@ def preproc_exefile(cmd):
     string = ""
     ret = []
     for token in lexer:
-        #print token
+        # print token
         if token.type in ("STRING", "DQSTRING"):
             string += token.value
         elif token.type in ("SPACE", "PIPE", "LOGIC"):
@@ -421,8 +378,9 @@ def preproc_exefile(cmd):
         ret.append(expand_exefile(string))
     else:
         ret.append(string)
-    #print ret
+    # print ret
     return "".join(ret)
+
 
 def call_sys_cmd(cmd):
     ch_title(cmd)
@@ -441,33 +399,72 @@ def call_sys_cmd(cmd):
         ret = 0
         try:
             if startwin:
-                ret = sp.call('start "" %s' % cmd, shell = 1)
+                ret = sp.call('start "" %s' % cmd, shell=1)
             else:
-                ret = sp.call(cmd, shell = 1)
+                ret = sp.call(cmd, shell=1)
         finally:
             et = time.time()
             update_batch_env()
             if cmd != "cls":
-                print
-                print >> readline.GetOutputFile(), "\033[1;32m" + "=" * 80
-                retcolor = ("32" if ret == 0 else "31")
-                print >> readline.GetOutputFile(), "\033[1;%sm[Return %d] \033[1;32m[Start %s] [End %s] [Elapsed %.3f sec]" % (retcolor, ret, time.strftime("%H:%M:%S", time.localtime(st)) + ".%d" % int(1000 * (st - int(st))), time.strftime("%H:%M:%S", time.localtime(et)) + ".%d" % int(1000 * (et - int(et))), et - st)
+                dump_summary(ret, st, et)
                 os.environ["ERRORLEVELEX"] = str(ret)
     finally:
         ch_title()
 
+SUMMARY_STYLE = style_from_dict({
+    Token.NORMAL: "#00FF00",
+    Token.ALERM: "#FF0000",
+})
+
+
+def dump_summary(retcode, start, end):
+    tokens = [
+        (Token.NORMAL, "\n" + "=" * 80 + "\n[Return "),
+        (Token.NORMAL if retcode == 0 else Token.ALERM, "%d" % retcode),
+        (Token.NORMAL, "] [Start %s] [End %s] [Elapsed %.3f sec]\n" %
+         (
+             time.strftime("%H:%M:%S", time.localtime(start)) +
+             ".%d" % int(1000 * (start - int(start))),
+             time.strftime("%H:%M:%S", time.localtime(end)) +
+             ".%d" % int(1000 * (end - int(end))),
+             end - start
+         )
+         )
+    ]
+    print_tokens(tokens, style=SUMMARY_STYLE)
+
+
+def get_prompt_args():
+    args = {
+        "style": style_from_dict({
+            Token.PATH: "#80C0FF",
+            Token.HOST: "#00FF00",
+            Token.TIP: "#FF0000",
+        }),
+        "get_prompt_tokens": lambda cli: [
+            (Token.PATH, "[%s]\n" % os.getcwdu().replace("\\", "/")),
+            (Token.HOST, "%s@%s" %
+             (os.getenv("COMPUTERNAME", ""), os.getenv("USERNAME", ""))),
+            (Token.TIP, "$ "),
+        ],
+        "completer": CmdExCompleter(),
+        "display_completions_in_columns": True,
+        "history": InMemoryHistory(),
+    }
+    return args
+
+
 def main():
     init()
-    index = 1
-    while 1:
+    args = get_prompt_args()
+    while True:
         try:
             try:
-                cmd = raw_input("\033[1;36m[%s]\n\033[1;32m<%d>\033[1;33m$ " % (os.getcwd().replace("\\", "/"), index)).strip()
+                cmd = prompt(**args).strip()
             except KeyboardInterrupt:
                 print
                 continue
             if cmd:
-                index += 1
                 if filter_cmd(cmd):
                     pass
                 else:
@@ -475,6 +472,8 @@ def main():
         except KeyboardInterrupt:
             continue
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print type(e).__name__, ":", str(e)
 
 if __name__ == "__main__":
