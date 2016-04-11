@@ -59,9 +59,11 @@ import random
 
 os.environ["PATHEXT"] = ".COM;.EXE;.BAT;.PY"
 
-from prompt_toolkit.contrib.completers import SystemCompleter, WordCompleter
+from prompt_toolkit.contrib.completers import PathCompleter, WordCompleter
+from prompt_toolkit.contrib.regular_languages.completion import GrammarCompleter
+from prompt_toolkit.contrib.regular_languages.compiler import compile
 from prompt_toolkit import prompt
-from prompt_toolkit.completion import Completer
+from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.shortcuts import print_tokens
 from prompt_toolkit.styles import style_from_dict
 from prompt_toolkit.token import Token
@@ -99,20 +101,69 @@ CMDEXE_INT_CMDS = [
     "env",
 ]
 
-
-class CmdExCompleter(Completer):
-
+class ExecutableCompleter(Completer):
+    """
+    Complete only excutable files in the current path.
+    """
     def __init__(self):
-        #self.word_completer = WordCompleter(CMDEXE_INT_CMDS, ignore_case=True)
-        self.sys_completer = SystemCompleter()
+        self.pathcompleter = PathCompleter(
+            only_directories=False,
+            min_input_len=1,
+            get_paths=lambda: ["."] + os.environ.get('PATH', '').split(os.pathsep),
+            file_filter=lambda name: os.path.isfile(name) and os.path.splitext(name)[1].lower() in [".com", ".exe", ".bat", ".py"],
+            expanduser=True)
+        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS)
 
     def get_completions(self, document, complete_event):
-        # for cmp in self.word_completer.get_completions(
-                # document, complete_event):
-            # yield cmp
-        for cmp in self.sys_completer.get_completions(
-                document, complete_event):
-            yield cmp
+        for completion in self.wordcompleter.get_completions(document, complete_event):
+            yield completion
+        for completion in self.pathcompleter.get_completions(document, complete_event):
+            yield completion
+
+
+class CmdExCompleter(GrammarCompleter):
+
+    def __init__(self):
+        # Compile grammar.
+        g = compile(
+            r"""
+                # First we have an executable.
+                (?P<executable>[^\s]+)
+
+                # Ignore literals in between.
+                (
+                    \s+
+                    ("[^"]*" | '[^']*' | [^'"]+ )
+                )*
+
+                \s+
+
+                # Filename as parameters.
+                (
+                    (?P<filename>[^\s]+) |
+                    "(?P<double_quoted_filename>[^\s]+)" |
+                    '(?P<single_quoted_filename>[^\s]+)'
+                )
+            """,
+            escape_funcs={
+                'double_quoted_filename': (lambda string: string.replace('"', '\\"')),
+                'single_quoted_filename': (lambda string: string.replace("'", "\\'")),
+            },
+            unescape_funcs={
+                'double_quoted_filename': (lambda string: string.replace('\\"', '"')),  # XXX: not enterily correct.
+                'single_quoted_filename': (lambda string: string.replace("\\'", "'")),
+            })
+
+        # Create GrammarCompleter
+        super(CmdExCompleter, self).__init__(
+            g,
+            {
+                'executable': ExecutableCompleter(),
+                'filename': PathCompleter(only_directories=False, expanduser=True),
+                'double_quoted_filename': PathCompleter(only_directories=False, expanduser=True),
+                'single_quoted_filename': PathCompleter(only_directories=False, expanduser=True),
+            })
+
 
 
 def dprint(msg):
