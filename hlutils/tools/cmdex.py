@@ -4,6 +4,10 @@ r'''
 An enhanced console for replacing cmd.exe.
 '''
 # Changes:
+#   ** version 1.0.13 2016-04-12 Hulei **
+#       1. 优化的提示
+#       2. 绑定快捷键ESC和CTRL-V
+#
 #   ** version 1.0.12 2016-04-11 Hulei **
 #       1. 使用prompt_toolkit代替readline库
 #
@@ -47,7 +51,7 @@ An enhanced console for replacing cmd.exe.
 
 from __future__ import unicode_literals
 
-__version__ = "1.0.12"
+__version__ = "1.0.13"
 
 import os
 import sys
@@ -58,8 +62,9 @@ import re
 import random
 
 os.environ["PATHEXT"] = ".COM;.EXE;.BAT;.PY"
+EXE_EXTS = os.environ["PATHEXT"].lower().split(os.pathsep)
 
-from prompt_toolkit.contrib.completers import PathCompleter, WordCompleter
+from prompt_toolkit.contrib.completers import WordCompleter
 from prompt_toolkit.contrib.regular_languages.completion import GrammarCompleter
 from prompt_toolkit.contrib.regular_languages.compiler import compile
 from prompt_toolkit import prompt
@@ -68,6 +73,9 @@ from prompt_toolkit.shortcuts import print_tokens
 from prompt_toolkit.styles import style_from_dict
 from prompt_toolkit.token import Token
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.key_binding.manager import KeyBindingManager
+from prompt_toolkit.keys import Keys
+
 
 CMDEXE_INT_CMDS = [
     "copy",
@@ -101,23 +109,125 @@ CMDEXE_INT_CMDS = [
     "env",
 ]
 
+
+class PathCompleter(Completer):
+    """
+    Complete for Path variables.
+
+    :param get_paths: Callable which returns a list of directories to look into
+                      when the user enters a relative path.
+    :param file_filter: Callable which takes a filename and returns whether
+                        this file should show up in the completion. ``None``
+                        when no filtering has to be done.
+    :param min_input_len: Don't do autocompletion when the input string is shorter.
+    """
+
+    def __init__(self, only_directories=False, get_paths=None, file_filter=None,
+                 min_input_len=0, expanduser=False):
+        assert get_paths is None or callable(get_paths)
+        assert file_filter is None or callable(file_filter)
+        assert isinstance(min_input_len, int)
+        assert isinstance(expanduser, bool)
+
+        self.only_directories = only_directories
+        self.get_paths = get_paths or (lambda: ['.'])
+        self.file_filter = file_filter or (lambda _: True)
+        self.min_input_len = min_input_len
+        self.expanduser = expanduser
+
+    def get_completions(self, document, complete_event):
+        text = document.text_before_cursor
+
+        # Complete only when we have at least the minimal input length,
+        # otherwise, we can too many results and autocompletion will become too
+        # heavy.
+        if len(text) < self.min_input_len:
+            return
+
+        try:
+            # Do tilde expansion.
+            if self.expanduser:
+                text = os.path.expanduser(text)
+
+            # Directories where to look.
+            dirname = os.path.dirname(text)
+            if dirname:
+                directories = [os.path.dirname(os.path.join(p, text))
+                               for p in self.get_paths()]
+            else:
+                directories = self.get_paths()
+
+            # Start of current file.
+            prefix = os.path.basename(text)
+
+            # Get all filenames.
+            filenames = []
+            for directory in directories:
+                # Look for matches in this directory.
+                if os.path.isdir(directory):
+                    for filename in os.listdir(directory):
+                        if filename.lower().startswith(prefix.lower()):  # ignore case
+                            filenames.append((directory, filename))
+
+            # Sort
+            filenames = sorted(filenames, key=lambda k: k[1])
+
+            # Yield them.
+            for directory, filename in filenames:
+                completion = filename
+                full_name = os.path.join(directory, filename)
+
+                if os.path.isdir(full_name):
+                    # For directories, add a slash to the filename.
+                    # (We don't add them to the `completion`. Users can type it
+                    # to trigger the autocompletion themself.)
+                    filename += '/'
+                else:
+                    if self.only_directories or not self.file_filter(
+                            full_name):
+                        continue
+
+                yield Completion(completion, -len(prefix), display=filename)
+        except OSError:
+            pass
+
+
 class ExecutableCompleter(Completer):
     """
     Complete only excutable files in the current path.
     """
+
     def __init__(self):
         self.pathcompleter = PathCompleter(
             only_directories=False,
             min_input_len=1,
-            get_paths=lambda: ["."] + os.environ.get('PATH', '').split(os.pathsep),
-            file_filter=lambda name: os.path.isfile(name) and os.path.splitext(name)[1].lower() in [".com", ".exe", ".bat", ".py"],
+            file_filter=lambda name: os.path.splitext(name)[1].lower() in EXE_EXTS,
             expanduser=True)
-        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS)
+        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS, ignore_case=True)
 
     def get_completions(self, document, complete_event):
-        for completion in self.wordcompleter.get_completions(document, complete_event):
+        text_prefix = document.text_before_cursor
+        if len(text_prefix) < 1:
+            return
+
+        # windows cmd.exe command
+        for completion in self.wordcompleter.get_completions(
+                document, complete_event):
             yield completion
-        for completion in self.pathcompleter.get_completions(document, complete_event):
+
+        # executeable in PATH
+        for _dir in os.environ["PATH"].split(os.pathsep):
+            if not os.path.exists(_dir):
+                continue
+            for f in os.listdir(_dir):
+                if f.lower().startswith(text_prefix.lower()) \
+                and os.path.isfile(os.path.join(_dir, f)) \
+                and os.path.splitext(f)[1].lower() in EXE_EXTS:
+                    yield Completion(f, -len(text_prefix), display=f)
+
+        # current dir files
+        for completion in self.pathcompleter.get_completions(
+                document, complete_event):
             yield completion
 
 
@@ -127,8 +237,12 @@ class CmdExCompleter(GrammarCompleter):
         # Compile grammar.
         g = compile(
             r"""
+                ;? # a semicolon get a start command
                 # First we have an executable.
-                (?P<executable>[^\s]+)
+                (
+                    (?P<executable>[^\s]+) |
+                    "(?P<double_quoted_executable>[^\s]+)"
+                )
 
                 # Ignore literals in between.
                 (
@@ -141,17 +255,17 @@ class CmdExCompleter(GrammarCompleter):
                 # Filename as parameters.
                 (
                     (?P<filename>[^\s]+) |
-                    "(?P<double_quoted_filename>[^\s]+)" |
-                    '(?P<single_quoted_filename>[^\s]+)'
+                    "(?P<double_quoted_filename>[^\s]+)"
                 )
             """,
             escape_funcs={
                 'double_quoted_filename': (lambda string: string.replace('"', '\\"')),
-                'single_quoted_filename': (lambda string: string.replace("'", "\\'")),
+                'double_quoted_executable': (lambda string: string.replace('"', '\\"')),
             },
             unescape_funcs={
-                'double_quoted_filename': (lambda string: string.replace('\\"', '"')),  # XXX: not enterily correct.
-                'single_quoted_filename': (lambda string: string.replace("\\'", "'")),
+                # XXX: not enterily correct.
+                'double_quoted_filename': (lambda string: string.replace('\\"', '"')),
+                'double_quoted_executable': (lambda string: string.replace('\\"', '"')),
             })
 
         # Create GrammarCompleter
@@ -159,11 +273,10 @@ class CmdExCompleter(GrammarCompleter):
             g,
             {
                 'executable': ExecutableCompleter(),
+                'double_quoted_executable': ExecutableCompleter(),
                 'filename': PathCompleter(only_directories=False, expanduser=True),
                 'double_quoted_filename': PathCompleter(only_directories=False, expanduser=True),
-                'single_quoted_filename': PathCompleter(only_directories=False, expanduser=True),
             })
-
 
 
 def dprint(msg):
@@ -178,9 +291,9 @@ def ch_title(title=None):
         ctypes.windll.kernel32.SetConsoleTitleW(unicode(title))
     else:
         cwd = os.getcwdu()
-        cwds = cwd.split(u"\\")
+        cwds = cwd.split("\\")
         cwds.reverse()
-        ctypes.windll.kernel32.SetConsoleTitleW(u"/".join(cwds) + u" - CMDEX")
+        ctypes.windll.kernel32.SetConsoleTitleW("/".join(cwds) + " - CMDEX")
 
 
 def dump_banner():
@@ -486,6 +599,25 @@ def dump_summary(retcode, start, end):
 
 
 def get_prompt_args():
+    key_bindings_manager = KeyBindingManager.for_prompt()
+
+    @key_bindings_manager.registry.add_binding(Keys.Escape)
+    def h1(event):
+        """
+        When ESC has been pressed, clear the input text.
+        """
+        event.cli.current_buffer.cursor_right(999)
+        event.cli.current_buffer.delete_before_cursor(999)
+
+    @key_bindings_manager.registry.add_binding(Keys.ControlV)
+    def h2(event):
+        """
+        When Ctrl-V has been pressed, insert clipboard text to the cursor.
+        """
+        from hlutils import get_clipboard_text
+        text = get_clipboard_text(True)
+        event.cli.current_buffer.insert_text(text)
+
     args = {
         "style": style_from_dict({
             Token.PATH: "#80C0FF",
@@ -501,6 +633,7 @@ def get_prompt_args():
         "completer": CmdExCompleter(),
         "display_completions_in_columns": True,
         "history": InMemoryHistory(),
+        "key_bindings_registry": key_bindings_manager.registry,
     }
     return args
 
