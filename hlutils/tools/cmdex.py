@@ -3,55 +3,9 @@
 r'''
 An enhanced console for replacing cmd.exe.
 '''
-# Changes:
-#   ** version 1.0.13 2016-04-12 Hulei **
-#       1. 优化的提示
-#       2. 绑定快捷键ESC和CTRL-V
-#
-#   ** version 1.0.12 2016-04-11 Hulei **
-#       1. 使用prompt_toolkit代替readline库
-#
-#   ** version 1.0.11 2015-03-26 Hulei **
-#       1. 修正了命令行解析较复杂时不正常的问题
-#
-#   ** verison 1.0.10 2015-01-30 Hulei **
-#       1. 对于每个路径使用不同的历史文件
-#       2. 执行的批处理脚本如果改变了环境变量，会体现在cmdex环境中
-#
-#   ** version 1.0.9 2015-01-14 Hulei **
-#       1. 将环境ERRORLEVEL改为ERRORLEVELEX，因为ERRORLEVEL不能主动设置
-#       2. 返回非0值时以红色显示
-#
-#   ** version 1.0.8 2015-01-12 Hulei **
-#       1. 修正无法补全中文文件名的问题
-#
-#   ** version 1.0.7 2015-01-11 Hulei **
-#       1. 使用管道符号“|”或“||”及“&&”时，后面的命令补全也会查找全局命令
-#       2. 全局补全的命令不显示后缀
-#
-#   ** version 1.0.6 2014-12-29 Hulei **
-#       1. 增加命令执行时间显示
-#
-#   ** verison 1.0.5 2014-11-17 Hulei **
-#       1. 当直接执行python脚本时，替换成python.exe调用，以修正64位Windows下的管道问题
-#       2. 将命令返回值设到ERRORLEVEL环境变量中
-#       3. 默认的可执行扩展名加入.py
-#
-#   ** version 1.0.4 2014-06-16 Hulei **
-#       1. 去掉以:号起始命令，输入开始的第一个命令会补全全局命令，后续的只实例文件
-#       2. 修正大写执行文件无法补全的问题
-#       3. 增加cmd.exe内部命令补全
-#
-#   ** version 1.0.3 2014-04-22 Hulei **
-#       1. ADD：以;号起始的命令不会阻塞
-#       2. ADD：以:号起始的补全会搜索全局PATH指定的目录，后缀在PATHEXT中指定的文件
-#
-#   ** version 1.0 2014-02-12 Hulei **
-#       1. first version
-
 from __future__ import unicode_literals
 
-__version__ = "1.0.13"
+__version__ = "1.0.14"
 
 import os
 import sys
@@ -74,7 +28,7 @@ from prompt_toolkit.styles import style_from_dict
 from prompt_toolkit.token import Token
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.key_binding.manager import KeyBindingManager
-from prompt_toolkit.keys import Keys
+from prompt_toolkit.keys import Keys, Key
 
 
 CMDEXE_INT_CMDS = [
@@ -108,6 +62,82 @@ CMDEXE_INT_CMDS = [
     "set",
     "env",
 ]
+
+
+class GitCmdCompeter(WordCompleter):
+
+    def __init__(self):
+        GIT_CMDS = [
+            "add", "gc", "receive-pack", "add--interactive", "get-tar-commit-id",
+            "reflog", "am", "grep", "relink", "annotate", "gui", "remote", "apply",
+            "gui--askpass", "remote-ext", "archimport", "gui--askyesno",
+            "remote-fd", "archive", "gui.tcl", "remote-ftp", "bisect",
+            "hash-object", "remote-ftps", "bisect--helper", "help", "remote-http",
+            "blame", "http-backend", "remote-https", "branch", "http-fetch",
+            "repack", "bundle", "http-push", "replace", "cat-file", "imap-send",
+            "request-pull", "check-attr", "index-pack", "rerere", "check-ignore",
+            "init", "reset", "check-mailmap", "init-db", "rev-list", "check-ref-format",
+            "instaweb", "rev-parse", "checkout", "interpret-trailers", "revert",
+            "checkout-index", "log", "rm", "cherry", "ls-files", "send-email",
+            "cherry-pick", "ls-remote", "send-pack", "citool", "ls-tree",
+            "sh-i18n--envsubst", "clean", "mailinfo", "shortlog", "clone",
+            "mailsplit", "show", "column", "merge", "show-branch", "commit",
+            "merge-base", "show-index", "commit-tree", "merge-file", "show-ref",
+            "config", "merge-index", "stage", "count-objects", "merge-octopus",
+            "stash", "credential", "merge-one-file", "status", "credential-store",
+            "merge-ours", "stripspace", "credential-wincred", "merge-recursive",
+            "submodule", "cvsexportcommit", "merge-resolve", "submodule--helper",
+            "cvsimport", "merge-subtree", "subtree", "cvsserver", "merge-tree",
+            "svn", "daemon", "mergetool", "symbolic-ref", "describe",
+            "mktag", "tag", "diff", "mktree", "unpack-file", "diff-files",
+            "mv", "unpack-objects", "diff-index", "name-rev", "update-index",
+            "diff-tree", "notes", "update-ref", "difftool", "p4", "update-server-info",
+            "difftool--helper", "pack-objects", "upload-archive", "fast-export",
+            "pack-redundant", "upload-pack", "fast-import", "pack-refs", "var",
+            "fetch", "patch-id", "verify-commit", "fetch-pack", "prune",
+            "verify-pack", "filter-branch", "prune-packed", "verify-tag",
+            "fmt-merge-msg", "pull", "web--browse", "for-each-ref", "push",
+            "whatchanged", "format-patch", "quiltimport", "worktree",
+            "fsck", "read-tree", "write-tree", "fsck-objects", "rebase",
+        ]
+        # get alias
+        try:
+            config = os.path.expanduser("~/.gitconfig")
+            if os.path.exists(config):
+                start = False
+                for line in open(config):
+                    if line.strip() == "[alias]":
+                        start = True
+                    elif line.startswith("["):
+                        start = False
+                    elif line.strip().startswith("#"):
+                        pass
+                    else:
+                        if "=" in line:
+                            GIT_CMDS.append(line.split("=")[0].strip())
+        except OSError:
+            pass
+
+        GIT_CMDS.sort(cmp=lambda x, y: len(x) - len(y))
+        WordCompleter.__init__(self, GIT_CMDS)
+
+
+class SvnCmdCompleter(WordCompleter):
+
+    def __init__(self):
+        SVN_CMDS = [
+            "add", "auth", "blame", "praise", "annotate", "ann", "cat", "changelist",
+            "cl", "checkout", "co", "cleanup", "commit", "ci", "copy", "cp",
+            "delete", "del", "remove", "rm", "diff", "di", "export", "help",
+            "?", "h", "import", "info", "list", "ls", "lock", "log", "merge",
+            "mergeinfo", "mkdir", "move", "mv", "rename", "ren", "patch", "propdel",
+            "pdel", "pd", "propedit", "pedit", "pe", "propget", "pget", "pg",
+            "proplist", "plist", "pl", "propset", "pset", "ps", "relocate",
+            "resolve", "resolved", "revert", "status", "stat", "st", "switch",
+            "sw", "unlock", "update", "up", "upgrade",
+        ]
+        SVN_CMDS.sort(cmp=lambda x, y: len(x) - len(y))
+        WordCompleter.__init__(self, SVN_CMDS)
 
 
 class PathCompleter(Completer):
@@ -200,15 +230,11 @@ class ExecutableCompleter(Completer):
     def __init__(self):
         self.pathcompleter = PathCompleter(
             only_directories=False,
-            min_input_len=1,
-            file_filter=lambda name: os.path.splitext(name)[1].lower() in EXE_EXTS,
             expanduser=True)
         self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS, ignore_case=True)
 
     def get_completions(self, document, complete_event):
         text_prefix = document.text_before_cursor
-        if len(text_prefix) < 1:
-            return
 
         # windows cmd.exe command
         for completion in self.wordcompleter.get_completions(
@@ -221,8 +247,8 @@ class ExecutableCompleter(Completer):
                 continue
             for f in os.listdir(_dir):
                 if f.lower().startswith(text_prefix.lower()) \
-                and os.path.isfile(os.path.join(_dir, f)) \
-                and os.path.splitext(f)[1].lower() in EXE_EXTS:
+                        and os.path.isfile(os.path.join(_dir, f)) \
+                        and os.path.splitext(f)[1].lower() in EXE_EXTS:
                     yield Completion(f, -len(text_prefix), display=f)
 
         # current dir files
@@ -237,6 +263,51 @@ class CmdExCompleter(GrammarCompleter):
         # Compile grammar.
         g = compile(
             r"""
+                git(\.exe)?
+                \s+
+                (?P<git_command>[^\s]+)
+                \s+
+                (
+                    (?P<filename>[^\s]+) |
+                    "(?P<double_quoted_filename>[^\s]+)"
+                )
+
+            |
+                svn(\.exe)?
+                \s+
+                (?P<svn_command>[^\s]+)
+                \s+
+                (
+                    (?P<filename>[^\s]+) |
+                    "(?P<double_quoted_filename>[^\s]+)"
+                )
+
+            |
+                start
+                \s+
+                ("[^"]+"\s+)?
+                # First we have an executable.
+                (
+                    (?P<executable>[^\s]+) |
+                    "(?P<double_quoted_executable>[^\s]+)"
+                )
+
+                # Ignore literals in between.
+                (
+                    \s+
+                    ("[^"]*" | '[^']*' | [^'"]+ )
+                )*
+
+                \s+
+
+                # Filename as parameters.
+                (
+                    (?P<filename>[^\s]+) |
+                    "(?P<double_quoted_filename>[^\s]+)"
+                )
+
+
+            |
                 ;? # a semicolon get a start command
                 # First we have an executable.
                 (
@@ -276,6 +347,8 @@ class CmdExCompleter(GrammarCompleter):
                 'double_quoted_executable': ExecutableCompleter(),
                 'filename': PathCompleter(only_directories=False, expanduser=True),
                 'double_quoted_filename': PathCompleter(only_directories=False, expanduser=True),
+                'git_command': GitCmdCompeter(),
+                'svn_command': SvnCmdCompleter(),
             })
 
 
@@ -625,9 +698,9 @@ def get_prompt_args():
             Token.TIP: "#FF0000",
         }),
         "get_prompt_tokens": lambda cli: [
-            (Token.PATH, "[%s]\n" % os.getcwdu().replace("\\", "/")),
-            (Token.HOST, "%s@%s" %
-             (os.getenv("COMPUTERNAME", ""), os.getenv("USERNAME", ""))),
+            (Token.HOST, "%s@%s  " %
+             (os.getenv("USERNAME", ""), os.getenv("COMPUTERNAME", ""))),
+            (Token.PATH, "%s\n" % os.getcwdu().replace("\\", "/")),
             (Token.TIP, "$ "),
         ],
         "completer": CmdExCompleter(),
