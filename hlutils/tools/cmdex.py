@@ -15,6 +15,11 @@ import ctypes
 import re
 import random
 
+def dprint(msg):
+    if 1:
+        ctypes.windll.kernel32.OutputDebugStringA(str(msg))
+    pass
+
 os.environ["PATHEXT"] = ".COM;.EXE;.BAT;.PY"
 EXE_EXTS = os.environ["PATHEXT"].lower().split(os.pathsep)
 
@@ -315,12 +320,6 @@ class CmdExCompleter(GrammarCompleter):
                     "(?P<double_quoted_executable>[^\s]+)"
                 )
 
-                # Ignore literals in between.
-                (
-                    \s+
-                    ("[^"]*" | '[^']*' | [^'"]+ )
-                )*
-
                 \s+
 
                 # Filename as parameters.
@@ -352,16 +351,8 @@ class CmdExCompleter(GrammarCompleter):
             })
 
 
-def dprint(msg):
-    if 0:
-        with open("C:/cmdex.log", "a") as f:
-            print >> f, msg
-    pass
-
 
 def ch_title(title=None):
-    if sys.platform.startswith('linux'):
-        return
     if title:
         ctypes.windll.kernel32.SetConsoleTitleW(unicode(title))
     else:
@@ -684,6 +675,15 @@ def get_prompt_args():
         event.cli.current_buffer.cursor_right(999)
         event.cli.current_buffer.delete_before_cursor(999)
 
+    @key_bindings_manager.registry.add_binding(Keys.ControlV)
+    def h2(event):
+        """
+        When Ctrl-V has been pressed, insert clipboard text to the cursor.
+        """
+        from hlutils import get_clipboard_text
+        text = get_clipboard_text(True)
+        event.cli.current_buffer.insert_text(text)
+
     args = {
         "style": style_from_dict({
             Token.PATH: "#80C0FF",
@@ -727,4 +727,8 @@ def main():
             print type(e).__name__, ":", str(e)
 
 if __name__ == "__main__":
+    if sys.platform.startswith("linux"):
+        print "Linux is not supported yet."
+        sys.exit(1)
     main()
+
