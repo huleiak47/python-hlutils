@@ -5,7 +5,7 @@ An enhanced console for replacing cmd.exe.
 '''
 from __future__ import unicode_literals
 
-__version__ = "1.0.14"
+__version__ = "1.0.15"
 
 import os
 import sys
@@ -360,6 +360,8 @@ def dprint(msg):
 
 
 def ch_title(title=None):
+    if sys.platform.startswith('linux'):
+        return
     if title:
         ctypes.windll.kernel32.SetConsoleTitleW(unicode(title))
     else:
@@ -681,15 +683,6 @@ def get_prompt_args():
         """
         event.cli.current_buffer.cursor_right(999)
         event.cli.current_buffer.delete_before_cursor(999)
-
-    @key_bindings_manager.registry.add_binding(Keys.ControlV)
-    def h2(event):
-        """
-        When Ctrl-V has been pressed, insert clipboard text to the cursor.
-        """
-        from hlutils import get_clipboard_text
-        text = get_clipboard_text(True)
-        event.cli.current_buffer.insert_text(text)
 
     args = {
         "style": style_from_dict({

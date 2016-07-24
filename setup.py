@@ -33,5 +33,5 @@ setup(
     entry_points={
         "console_scripts": consoles,
     },
-    install_requires=["prompt_toolkit>=0.60"],
+    install_requires=["prompt_toolkit>=0.60", "ply"],
 )
