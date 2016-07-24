@@ -320,6 +320,9 @@ class CmdExCompleter(GrammarCompleter):
                     "(?P<double_quoted_executable>[^\s]+)"
                 )
 
+                # Ignore texts between
+                .*
+
                 \s+
 
                 # Filename as parameters.
