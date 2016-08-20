@@ -5,7 +5,7 @@ An enhanced console for replacing cmd.exe.
 '''
 from __future__ import unicode_literals
 
-__version__ = "1.0.15"
+__version__ = "1.0.16"
 
 import os
 import sys
@@ -34,7 +34,17 @@ from prompt_toolkit.token import Token
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.key_binding.manager import KeyBindingManager
 from prompt_toolkit.keys import Keys, Key
+from prompt_toolkit.document import Document
 
+
+
+class CmdExHistory(InMemoryHistory):
+    def append(self, string):
+        if string in self.strings:
+            self.strings.remove(string)
+        self.strings.append(string)
+
+hist_obj = CmdExHistory()
 
 CMDEXE_INT_CMDS = [
     "copy",
@@ -236,7 +246,7 @@ class ExecutableCompleter(Completer):
         self.pathcompleter = PathCompleter(
             only_directories=False,
             expanduser=True)
-        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS, ignore_case=True)
+        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS + _InternalCmds.keys(), ignore_case=True)
 
     def get_completions(self, document, complete_event):
         text_prefix = document.text_before_cursor
@@ -269,6 +279,7 @@ class CmdExCompleter(GrammarCompleter):
         g = compile(
             r"""
                 git(\.exe)?
+                (\s+h|\s+help)?
                 \s+
                 (?P<git_command>[^\s]+)
                 \s+
@@ -440,6 +451,12 @@ def process_set(cmd):
             if not count:
                 print "Environment variable '%s' is not defined." % param
 
+def process_history(cmd):
+    for cmd in hist_obj.strings:
+        print cmd
+
+
+
 _InternalCmds = {
     "q": process_exit,
     "exit": process_exit,
@@ -447,6 +464,7 @@ _InternalCmds = {
     "cd": process_cd,
     "set": process_set,
     "env": process_set,
+    "hist": process_history,
 }
 
 
@@ -666,6 +684,7 @@ def dump_summary(retcode, start, end):
     ]
     print_tokens(tokens, style=SUMMARY_STYLE)
 
+default_input = ""
 
 def get_prompt_args():
     key_bindings_manager = KeyBindingManager.for_prompt()
@@ -687,6 +706,35 @@ def get_prompt_args():
         text = get_clipboard_text(True)
         event.cli.current_buffer.insert_text(text)
 
+    @key_bindings_manager.registry.add_binding(Keys.ControlO)
+    def h3(event):
+        """
+        When Ctrl-O has been pressed, open a Vim process to select a history
+        command.
+        """
+        import subprocess as sp
+        import random
+        rcfile = os.path.dirname(__file__) + "\\history.vim"
+        randval = random.randint(1000000, 9999999)
+        histfile = os.path.expandvars("$TMP/cmdex_%d.hist" % randval)
+        selectfile = os.path.expandvars("$TMP/cmdex_%d.sel" % randval)
+        with open(histfile, "w") as f:
+            for cmd in hist_obj.strings:
+                print >> f, cmd.encode("utf-8")
+
+        os.system("vim.exe -R --noplugin + -u %s -- %s" % (rcfile, histfile))
+        os.remove(histfile)
+
+        global default_input
+        if os.path.exists(selectfile):
+            text = open(selectfile).read().strip()
+            default_input = text.decode("utf-8", "ignore")
+            os.remove(selectfile)
+
+        event.cli.current_buffer.cursor_right(999)
+        event.cli.current_buffer.delete_before_cursor(999)
+        event.cli.set_return_value(Document(""))
+
     args = {
         "style": style_from_dict({
             Token.PATH: "#80C0FF",
@@ -701,7 +749,7 @@ def get_prompt_args():
         ],
         "completer": CmdExCompleter(),
         "display_completions_in_columns": True,
-        "history": InMemoryHistory(),
+        "history": hist_obj,
         "key_bindings_registry": key_bindings_manager.registry,
     }
     return args
@@ -713,6 +761,9 @@ def main():
     while True:
         try:
             try:
+                global default_input
+                args["default"] = default_input
+                default_input = ""
                 cmd = prompt(**args).strip()
             except KeyboardInterrupt:
                 print
