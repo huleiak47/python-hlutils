@@ -14,7 +14,7 @@ def main():
     for i in range(0, 16):
         table.add_row(["%2d" % i, "%X" % i, "b 0000"[0:6 - (len(bin(i)) - 2)] + bin(i)[2:]])
 
-    print table.draw()
+    print(table.draw())
 
 if __name__ == '__main__':
     main()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-#-*- coding:gbk -*-
-u'''
-Ò»Ğ©Í¨ÓÃµÄ¹¦ÄÜ,  ¿ÉÒÔÖ±½Óµ¼Èë°üÃûÊ¹ÓÃ
+#-*- coding:utf-8 -*-
+'''
+ä¸€äº›é€šç”¨çš„åŠŸèƒ½,  å¯ä»¥ç›´æ¥å¯¼å…¥åŒ…åä½¿ç”¨
 '''
 
 import ctypes
@@ -44,42 +44,35 @@ if not islinux:
     _GHND = 0x42
 
 
-    def get_clipboard_text(isunicode = False):
-        u'''
-        @brief ´Ó¼ôÌù°åÈ¡µÃ×Ö·û´®
-        @param isunicode    ÊÇ·ñÈ¡µÃUNICODE¸ñÊ½µÄ×Ö·û´®
-        @return ¼ôÌù°åÖĞµÄ×Ö·û´®
+    def get_clipboard_text():
+        '''
+        @brief ä»å‰ªè´´æ¿å–å¾—å­—ç¬¦ä¸²
+        @param isunicode    æ˜¯å¦å–å¾—UNICODEæ ¼å¼çš„å­—ç¬¦ä¸²
+        @return å‰ªè´´æ¿ä¸­çš„å­—ç¬¦ä¸²
         '''
         text = None
         if _OpenClipboard(0):
-            if isunicode:
-                hClipMem = _GetClipboardData(_CF_UNICODETEXT)
-                _GlobalLock.restype = ctypes.c_wchar_p
-            else:
-                hClipMem = _GetClipboardData(_CF_TEXT)
-                _GlobalLock.restype = ctypes.c_char_p
+            hClipMem = _GetClipboardData(_CF_UNICODETEXT)
+            _GlobalLock.restype = ctypes.c_wchar_p
             text = _GlobalLock(hClipMem)
             _GlobalUnlock(hClipMem)
             _CloseClipboard()
         return text
 
     def set_clipboard_text(text):
-        u'''
-        @brief °Ñ×Ö·û´®ÉèÖÃµ½¼ôÌù°åÖĞ
-        @param text ĞèÒªÉèÖÃµÄ×Ö·û´®£¬±ØĞëÊÇstr»òunicodeÀàĞÍ
-        @throws TypeError     textµÄÀàĞÍ²»ÕıÈ·
+        '''
+        @brief æŠŠå­—ç¬¦ä¸²è®¾ç½®åˆ°å‰ªè´´æ¿ä¸­
+        @param text éœ€è¦è®¾ç½®çš„å­—ç¬¦ä¸²ï¼Œå¿…é¡»æ˜¯stræˆ–unicodeç±»å‹
+        @throws TypeError     textçš„ç±»å‹ä¸æ­£ç¡®
         @return None
         '''
-        if not isinstance(text, basestring):
+        if isinstance(text, bytes):
+            text = text.decode("mbcs")
+        if not isinstance(text, str):
             raise ValueError("text must be a string")
-        if isinstance(text, str):
-            buffer = ctypes.create_string_buffer(text)
-            bufferSize = len(text) + 1
-            mode = _CF_TEXT
-        else:
-            buffer = ctypes.create_unicode_buffer(text)
-            bufferSize = len(text) * 2 + 2
-            mode = _CF_UNICODETEXT
+        buffer = ctypes.create_unicode_buffer(text)
+        bufferSize = len(text) * 2 + 2
+        mode = _CF_UNICODETEXT
         hGlobalMem = _GlobalAlloc(_GHND, bufferSize)
         _GlobalLock.restype = ctypes.c_void_p
         lpGlobalMem = _GlobalLock(hGlobalMem)
@@ -98,96 +91,96 @@ else:
         pass
 
 
-def bytes_to_str(bytes, lower=True, prefix=u'', suffix=u'', sep=u' '):
-    u'''
-    @brief °Ñ×Ö½ÚÁ÷×ª³Éunicode×Ö·û´®±íÊ¾
-    @param bytes      ×Ö½ÚÁ÷£¬ÀàĞÍÎªstr
-    @param lower      TrueÊ¹ÓÃĞ¡Ğ´µÄa-f£¬FalseÊ¹ÓÃ´óĞ´A-F
-    @param prefix     Ã¿¸ö×Ö½ÚµÄÇ°×º±íÊ¾£¬Èç'0x'
-    @param suffix     Ã¿¸ö×Ö½ÚµÄºó×º±íÊ¾£¬Èç'H'
-    @param sep        ×Ö½ÚÖ®¼äµÄ·Ö¸ô×Ö½Ú´®£¬Èç','
-    @throws TypeError bytesµÄÀàĞÍ²»ÕıÈ·
-    @return           unicode×Ö·û´®
+def bytes_to_str(b, lower=True, prefix='', suffix='', sep=' '):
     '''
-    if not isinstance(bytes, str):
-        raise TypeError("bytes must be a str.")
+    @brief æŠŠå­—èŠ‚æµè½¬æˆunicodeå­—ç¬¦ä¸²è¡¨ç¤º
+    @param bytes      å­—èŠ‚æµï¼Œç±»å‹ä¸ºstr
+    @param lower      Trueä½¿ç”¨å°å†™çš„a-fï¼ŒFalseä½¿ç”¨å¤§å†™A-F
+    @param prefix     æ¯ä¸ªå­—èŠ‚çš„å‰ç¼€è¡¨ç¤ºï¼Œå¦‚'0x'
+    @param suffix     æ¯ä¸ªå­—èŠ‚çš„åç¼€è¡¨ç¤ºï¼Œå¦‚'H'
+    @param sep        å­—èŠ‚ä¹‹é—´çš„åˆ†éš”å­—èŠ‚ä¸²ï¼Œå¦‚','
+    @throws TypeError bytesçš„ç±»å‹ä¸æ­£ç¡®
+    @return           unicodeå­—ç¬¦ä¸²
+    '''
+    if not isinstance(b, bytes):
+        raise TypeError("b must be a bytes.")
     l = []
-    for c in bytes:
+    for c in b:
         if lower:
-            l.append(u'%s%02x%s' % (prefix, ord(c), suffix))
+            l.append('%s%02x%s' % (prefix, c, suffix))
         else:
-            l.append(u'%s%02X%s' % (prefix, ord(c), suffix))
+            l.append('%s%02X%s' % (prefix, c, suffix))
     return sep.join(l)
 
 
 import re
 
-_RE_MATCH = re.compile(ur'^\s*((0[xX])?[a-fA-F0-9]{2}\s*)*\s*$')
-_RE_GET_HEX = re.compile(ur'[a-fA-F0-9]{2}')
+_RE_MATCH = re.compile(r'^\s*((0[xX])?[a-fA-F0-9]{2}\s*)*\s*$')
+_RE_GET_HEX = re.compile(r'[a-fA-F0-9]{2}')
 def str_to_bytes(s):
-    u'''
-    @brief °Ñ×Ö·û´®±íÊ¾µÄ×Ö½ÚÁ÷×ªÎªstrÀàĞÍµÄ×Ö½ÚÁ÷
-    @param s      ×Ö·û´®£¬str»òunicode
-    @throws TypeError     sµÄÀàĞÍ²»ÕıÈ·
-    @return       strÀàĞÍµÄ×Ö½ÚÁ÷
     '''
-    if not isinstance(s, basestring):
-        raise TypeError("s must be a str or unicode")
-    if isinstance(s, str):
+    @brief æŠŠå­—ç¬¦ä¸²è¡¨ç¤ºçš„å­—èŠ‚æµè½¬ä¸ºstrç±»å‹çš„å­—èŠ‚æµ
+    @param s      å­—ç¬¦ä¸²ï¼Œstræˆ–unicode
+    @throws TypeError     sçš„ç±»å‹ä¸æ­£ç¡®
+    @return       strç±»å‹çš„å­—èŠ‚æµ
+    '''
+    if not isinstance(s, (str, bytes)):
+        raise TypeError("s must be a str or bytes")
+    if isinstance(s, bytes):
         s = s.decode('mbcs')
     if _RE_MATCH.match(s):
         hexes = []
         for hexstr in _RE_GET_HEX.findall(s):
-            hexes.append(chr(int(hexstr, 16)))
-        return ''.join(hexes)
+            hexes.append(int(hexstr, 16))
+        return bytes(hexes)
     else:
         raise ValueError("cannot convert to bytes from \"%s\"" % s)
 
 #-----------------------------------------------------------------------#
 def readtext(filepath):
-    u'''
-    @brief Ò»´Î¶ÁÈ¡ÎÄ±¾ÎÄ¼şµÄËùÓĞÄÚÈİ²¢¹Ø±ÕÎÄ¼ş
-    @param filepath     ÎÄ¼şÂ·¾¶
-    @return     ÎÄ±¾ÎÄ¼şµÄÄÚÈİ
+    '''
+    @brief ä¸€æ¬¡è¯»å–æ–‡æœ¬æ–‡ä»¶çš„æ‰€æœ‰å†…å®¹å¹¶å…³é—­æ–‡ä»¶
+    @param filepath     æ–‡ä»¶è·¯å¾„
+    @return     æ–‡æœ¬æ–‡ä»¶çš„å†…å®¹
     '''
     with open(filepath, 'r') as f:
         return f.read()
 
 def readlines(filepath):
-    u'''
-    @brief Ò»´Î¶ÁÈ¡ÎÄ±¾ÎÄ¼şµÄËùÓĞĞĞ²¢¹Ø±ÕÎÄ¼ş
-    @param filepath     ÎÄ¼şÂ·¾¶
-    @return     ÎÄ±¾ÎÄ¼şµÄËùÓĞĞĞ
+    '''
+    @brief ä¸€æ¬¡è¯»å–æ–‡æœ¬æ–‡ä»¶çš„æ‰€æœ‰è¡Œå¹¶å…³é—­æ–‡ä»¶
+    @param filepath     æ–‡ä»¶è·¯å¾„
+    @return     æ–‡æœ¬æ–‡ä»¶çš„æ‰€æœ‰è¡Œ
     '''
     with open(filepath, 'r') as f:
         return f.readlines()
 
 def readbinary(filepath):
-    u'''
-    @brief Ò»´Î¶ÁÈ¡¶ş½øÖÆÎÄ¼şµÄËùÓĞÄÚÈİ²¢¹Ø±ÕÎÄ¼ş
-    @param filepath     ÎÄ¼şÂ·¾¶
-    @return     ¶ş½øÖÆÎÄ¼şµÄÄÚÈİ
+    '''
+    @brief ä¸€æ¬¡è¯»å–äºŒè¿›åˆ¶æ–‡ä»¶çš„æ‰€æœ‰å†…å®¹å¹¶å…³é—­æ–‡ä»¶
+    @param filepath     æ–‡ä»¶è·¯å¾„
+    @return     äºŒè¿›åˆ¶æ–‡ä»¶çš„å†…å®¹
     '''
     with open(filepath, 'rb') as f:
         return f.read()
 
 def writetext(filepath, text, append=False):
-    u'''
-    @brief Ò»´ÎĞ´ÈëÎÄ±¾µ½ÎÄ¼ş²¢¹Ø±ÕÎÄ¼ş
-    @param filepath     ÎÄ¼şÂ·¾¶
-    @param text         Ğ´ÈëÄÚÈİ
-    @param append       ÊÇ·ñ½«ÎÄ±¾¸½¼Óµ½ÎÄ¼şÎ²
+    '''
+    @brief ä¸€æ¬¡å†™å…¥æ–‡æœ¬åˆ°æ–‡ä»¶å¹¶å…³é—­æ–‡ä»¶
+    @param filepath     æ–‡ä»¶è·¯å¾„
+    @param text         å†™å…¥å†…å®¹
+    @param append       æ˜¯å¦å°†æ–‡æœ¬é™„åŠ åˆ°æ–‡ä»¶å°¾
     @return None
     '''
     with open(filepath, 'w' if not append else 'a') as f:
         f.write(text)
 
 def writelines(filepath, lines, append=False):
-    u'''
-    @brief Ò»´ÎĞ´Èë¶àĞĞÎÄ±¾µ½ÎÄ¼ş²¢¹Ø±ÕÎÄ¼ş
-    @param filepath     ÎÄ¼şÂ·¾¶
-    @param lines        Ğ´ÈëµÄ¶àĞĞÎÄ±¾
-    @param append       ÊÇ·ñ½«ÎÄ±¾¸½¼Óµ½ÎÄ¼şÎ²
+    '''
+    @brief ä¸€æ¬¡å†™å…¥å¤šè¡Œæ–‡æœ¬åˆ°æ–‡ä»¶å¹¶å…³é—­æ–‡ä»¶
+    @param filepath     æ–‡ä»¶è·¯å¾„
+    @param lines        å†™å…¥çš„å¤šè¡Œæ–‡æœ¬
+    @param append       æ˜¯å¦å°†æ–‡æœ¬é™„åŠ åˆ°æ–‡ä»¶å°¾
     @return None
     '''
     with open(filepath, 'w' if not append else 'a') as f:
@@ -195,11 +188,11 @@ def writelines(filepath, lines, append=False):
             f.write(line)
 
 def writebinary(filepath, bytes, append=False):
-    u'''
-    @brief Ò»´ÎĞ´Èë¶ş½øÖÆÊı¾İµ½ÎÄ¼ş²¢¹Ø±ÕÎÄ¼ş
-    @param filepath     ÎÄ¼şÂ·¾¶
-    @param bytes        ¶ş½øÖÆÊı¾İ
-    @param append       ÊÇ·ñ½«ÎÄ±¾¸½¼Óµ½ÎÄ¼şÎ²
+    '''
+    @brief ä¸€æ¬¡å†™å…¥äºŒè¿›åˆ¶æ•°æ®åˆ°æ–‡ä»¶å¹¶å…³é—­æ–‡ä»¶
+    @param filepath     æ–‡ä»¶è·¯å¾„
+    @param bytes        äºŒè¿›åˆ¶æ•°æ®
+    @param append       æ˜¯å¦å°†æ–‡æœ¬é™„åŠ åˆ°æ–‡ä»¶å°¾
     @return None
     '''
     with open(filepath, 'wb' if not append else 'ab') as f:
@@ -207,10 +200,10 @@ def writebinary(filepath, bytes, append=False):
 
 
 def call(args):
-    u'''
-    @brief Í¨¹ıÏµÍ³shellµ÷ÓÃÃüÁîĞĞ£¬ÄÜ¹»ÕıÈ·ÊäÈë^·û
-    @param args     ÃüÁîĞĞÄÚÈİ£¬¿ÉÒÔÊÇÒ»¸östr£¬»òÕßÒ»¸ölist
-    @return ÃüÁîµÄ·µ»ØÖµ
+    '''
+    @brief é€šè¿‡ç³»ç»Ÿshellè°ƒç”¨å‘½ä»¤è¡Œï¼Œèƒ½å¤Ÿæ­£ç¡®è¾“å…¥^ç¬¦
+    @param args     å‘½ä»¤è¡Œå†…å®¹ï¼Œå¯ä»¥æ˜¯ä¸€ä¸ªstrï¼Œæˆ–è€…ä¸€ä¸ªlist
+    @return å‘½ä»¤çš„è¿”å›å€¼
     '''
     if not islinux:
         if isinstance(args, str):
@@ -224,54 +217,54 @@ def call(args):
 
 #-----------------------------------------------------------------------#
 import time
-#¼ÆÊ±Æ÷¹¦ÄÜ
+#è®¡æ—¶å™¨åŠŸèƒ½
 class timer(object):
-    u'''
-    @brief ¼ÆÊ±Æ÷
+    '''
+    @brief è®¡æ—¶å™¨
     '''
     def __init__(self):
-        u'''
-        @brief ¹¹Ôì·½·¨
+        '''
+        @brief æ„é€ æ–¹æ³•
         '''
         self.__start = 0.0
         self.__used = 0.0
 
     def reset(self):
-        u'''
-        @brief ¸´Î»£¬Êı¾İÇåÁã
+        '''
+        @brief å¤ä½ï¼Œæ•°æ®æ¸…é›¶
         @return None
 
-        Õâ¸ö·½·¨ÓÃÀ´¸´Î»ÕıÔÚÔËĞĞ»òÔİÍ£µÄ¼ÆÊ±Æ÷£¬¸´Î»ºóµ±Ç°µÄ½ø¶È±»ÇåÁã
+        è¿™ä¸ªæ–¹æ³•ç”¨æ¥å¤ä½æ­£åœ¨è¿è¡Œæˆ–æš‚åœçš„è®¡æ—¶å™¨ï¼Œå¤ä½åå½“å‰çš„è¿›åº¦è¢«æ¸…é›¶
         '''
         self.__start = 0.0
         self.__used = 0.0
 
     def go(self):
-        u'''
-        @brief Æô¶¯¼ÆÊ±Æ÷
+        '''
+        @brief å¯åŠ¨è®¡æ—¶å™¨
         @return None
 
-        Õâ¸ö·½·¨ÓÃÀ´Æô¶¯¼ÆÊ±Æ÷£¬Èç¹û¼ÆÊ±Æ÷ÒÑ¾­Æô¶¯»ò´¦ÓÚÔİÍ£×´Ì¬£¬ÄÇÃ´Ê²Ã´Ò²²»×ö
+        è¿™ä¸ªæ–¹æ³•ç”¨æ¥å¯åŠ¨è®¡æ—¶å™¨ï¼Œå¦‚æœè®¡æ—¶å™¨å·²ç»å¯åŠ¨æˆ–å¤„äºæš‚åœçŠ¶æ€ï¼Œé‚£ä¹ˆä»€ä¹ˆä¹Ÿä¸åš
         '''
         if self.__start == 0.0:
             self.__start = time.time()
 
     def reset_go(self):
-        u'''
-        @brief ¸´Î»²¢Æô¶¯¼ÆÊ±Æ÷
+        '''
+        @brief å¤ä½å¹¶å¯åŠ¨è®¡æ—¶å™¨
         @return None
 
-        Ïàµ±ÓÚµ÷ÓÃreset()ÔÙµ÷ÓÃgo()
+        ç›¸å½“äºè°ƒç”¨reset()å†è°ƒç”¨go()
         '''
         self.reset()
         self.go()
 
     def pause(self):
-        u'''
-        @brief ÔİÍ£¼ÆÊ±Æ÷
+        '''
+        @brief æš‚åœè®¡æ—¶å™¨
         @return None
 
-        Õâ¸ö·½·¨ÓÃÀ´ÔİÍ£¼ÆÊ±Æ÷£¬ÔİÍ£ÆÚ¼äµÄÊ±¼ä²»»á¼ÆÈë×îºóµÄ½á¹û£¬Èç¹ûÒª½Ó×Å¼ÆÊ±£¬µ÷ÓÃgo()£¬Èç¹ûÒªÖØĞÂ¼ÆÊ±£¬µ÷ÓÃreset_go()
+        è¿™ä¸ªæ–¹æ³•ç”¨æ¥æš‚åœè®¡æ—¶å™¨ï¼Œæš‚åœæœŸé—´çš„æ—¶é—´ä¸ä¼šè®¡å…¥æœ€åçš„ç»“æœï¼Œå¦‚æœè¦æ¥ç€è®¡æ—¶ï¼Œè°ƒç”¨go()ï¼Œå¦‚æœè¦é‡æ–°è®¡æ—¶ï¼Œè°ƒç”¨reset_go()
         '''
         if self.__start != 0.0:
             now = time.time()
@@ -279,11 +272,11 @@ class timer(object):
             self.__start = 0.0
 
     def get(self):
-        u'''
-        @brief È¡µÃÍ³¼ÆµÄÊ±¼äÖµ
-        @return Ê±¼äÖµ£¬ÒÔÃëÎªµ¥Î»
+        '''
+        @brief å–å¾—ç»Ÿè®¡çš„æ—¶é—´å€¼
+        @return æ—¶é—´å€¼ï¼Œä»¥ç§’ä¸ºå•ä½
 
-        Õâ¸ö·½·¨ÓÃÓÚÈ¡µÃreset()ºóµÚÒ»´Îµ÷ÓÃgo()µ½µ÷ÓÃget()Ö®¼äÏûºÄµÄÊ±¼ä£¬µ÷ÓÃpause()µ½go()Ö®Ç°µÄÊ±¼ä²»¼ÆËãÔÚÄÚ
+        è¿™ä¸ªæ–¹æ³•ç”¨äºå–å¾—reset()åç¬¬ä¸€æ¬¡è°ƒç”¨go()åˆ°è°ƒç”¨get()ä¹‹é—´æ¶ˆè€—çš„æ—¶é—´ï¼Œè°ƒç”¨pause()åˆ°go()ä¹‹å‰çš„æ—¶é—´ä¸è®¡ç®—åœ¨å†…
         '''
         used = self.__used
         if self.__start != 0.0:

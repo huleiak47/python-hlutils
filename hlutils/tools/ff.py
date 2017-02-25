@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-u'''
+'''
 find file by patterns.
 '''
 
@@ -10,10 +10,6 @@ import platform
 import argparse
 import re
 
-import locale
-SYSENC = locale.getdefaultlocale()[1]
-reload(sys)
-sys.setdefaultencoding(SYSENC)
 
 class patternerror(Exception):pass
 
@@ -67,24 +63,24 @@ class pattern_regex(pattern):
 class pattern_glob(pattern_regex):
     def __init__(self, strpattern, casesense):
         chars = []
-        chars.append(u'^')
+        chars.append('^')
         for c in strpattern:
-            if c in [u'^', u'$', u'.', u'+', u'{', u'}', u'[', u']', u'(', u')', u'|']:
-                chars.append(u'\\')
-            elif c in [u'?', u'*']:
-                chars.append(u'.')
+            if c in ['^', '$', '.', '+', '{', '}', '[', ']', '(', ')', '|']:
+                chars.append('\\')
+            elif c in ['?', '*']:
+                chars.append('.')
             chars.append(c)
-        chars.append(u'$')
-        strpattern = u''.join(chars)
+        chars.append('$')
+        strpattern = ''.join(chars)
         super(pattern_glob, self).__init__(strpattern, casesense)
 
 class pattern_size(pattern):
-    RE_PTN = re.compile(ur'^\s*(?:(0[x][a-f0-9]+|\d+(?:\.\d+)?)([KMG]?))?\s*:\s*(?:(0[x][a-f0-9]+|\d+(?:\.\d+)?)([KMG]?))?\s*$', re.IGNORECASE)
+    RE_PTN = re.compile(r'^\s*(?:(0[x][a-f0-9]+|\d+(?:\.\d+)?)([KMG]?))?\s*:\s*(?:(0[x][a-f0-9]+|\d+(?:\.\d+)?)([KMG]?))?\s*$', re.IGNORECASE)
     def __init__(self, strpattern):
         matchobj = self.RE_PTN.match(strpattern)
         if not matchobj:
-            raise patternerror(u'size pattern error: %s' % strpattern)
-        min_n, min_u, max_n, max_u = map(matchobj.group, range(1, 5))
+            raise patternerror('size pattern error: %s' % strpattern)
+        min_n, min_u, max_n, max_u = list(map(matchobj.group, list(range(1, 5))))
         min = pattern_size.get_number(min_n, min_u)
         max = pattern_size.get_number(max_n, max_u)
         if min is None:
@@ -92,7 +88,7 @@ class pattern_size(pattern):
         if max is None:
             max = 0xffffffffffffffff
         if min > max:
-            raise patternerror(u'size pattern error: %s' % strpattern)
+            raise patternerror('size pattern error: %s' % strpattern)
         self.__min = min
         self.__max = max
 
@@ -100,7 +96,7 @@ class pattern_size(pattern):
     def get_number(n, u):
         if not n:
             return None
-        if n.lower().startswith(u'0x'):
+        if n.lower().startswith('0x'):
             nn = int(n, 16)
         else:
             nn = float(n)
@@ -118,17 +114,17 @@ class pattern_size(pattern):
         return self.__min <= size <= self.__max
 
 def parse_command_line():
-    parser = argparse.ArgumentParser(prog=u'ff')
-    parser.add_argument(u'dirname', nargs=u'*', default=['.'], help=u'dir for searching')
-    parser.add_argument(u'-p', u'--pattern', action=u'append', help=u'file name pattern use ? and *')
-    parser.add_argument(u'-e', u'--regex', action=u'append', help=u'file name pattern use regex expression')
-    parser.add_argument(u'-z', u'--size', action=u'append', help=u'file size pattern like 1M:2.5G')
-    parser.add_argument(u'-R', u'--norecurse', action=u'store_true', help=u'do NOT recurse the dir')
-    parser.add_argument(u'-c', u'--casesense', action=u'store_true', help=u'case sencse')
-    parser.add_argument(u'-S', u'--backslash', action=u'store_true', help=u'use "\\" instead of "/"')
-    parser.add_argument(u'-q', u'--quote', action=u'store_true', help=u'add quote around file names')
-    parser.add_argument(u'-v', u'--invert', action=u'store_true', help=u'print files NOT matching')
-    parser.add_argument(u'-d', u'--dir', action=u'store_true', help=u'search dirs instead of files')
+    parser = argparse.ArgumentParser(prog='ff')
+    parser.add_argument('dirname', nargs='*', default=['.'], help='dir for searching')
+    parser.add_argument('-p', '--pattern', action='append', help='file name pattern use ? and *')
+    parser.add_argument('-e', '--regex', action='append', help='file name pattern use regex expression')
+    parser.add_argument('-z', '--size', action='append', help='file size pattern like 1M:2.5G')
+    parser.add_argument('-R', '--norecurse', action='store_true', help='do NOT recurse the dir')
+    parser.add_argument('-c', '--casesense', action='store_true', help='case sencse')
+    parser.add_argument('-S', '--backslash', action='store_true', help='use "\\" instead of "/"')
+    parser.add_argument('-q', '--quote', action='store_true', help='add quote around file names')
+    parser.add_argument('-v', '--invert', action='store_true', help='print files NOT matching')
+    parser.add_argument('-d', '--dir', action='store_true', help='search dirs instead of files')
 
     return parser.parse_args(sys.argv[1:])
 
@@ -136,16 +132,16 @@ def make_patterns(ns):
     allptns = []
     nameptns = []
     if ns.pattern:
-        nameptns += map(lambda p: pattern_glob(p.decode(SYSENC, 'replace'), ns.casesense), ns.pattern)
+        nameptns += [pattern_glob(p, ns.casesense) for p in ns.pattern]
     if ns.regex:
-        nameptns += map(lambda r: pattern_regex(r.decode(SYSENC, 'replace'), ns.casesense), ns.regex)
+        nameptns += [pattern_regex(r, ns.casesense) for r in ns.regex]
     if not nameptns:
-        nameptns.append(pattern_regex(u'.*', ns.casesense))
+        nameptns.append(pattern_regex('.*', ns.casesense))
     allptns.append(pattern_or(nameptns))
 
     sizeptns = []
     if not ns.dir and ns.size:
-        sizeptns += map(lambda s: pattern_size(s.decode(SYSENC, 'replace')), ns.size)
+        sizeptns += [pattern_size(s) for s in ns.size]
     if sizeptns:
         allptns.append(pattern_or(sizeptns))
 
@@ -174,16 +170,16 @@ def search_file(ptn, ns):
             #if is C: D: add / to the tail
             dir = dir + '/'
         if ns.norecurse:
-            files = os.listdir(dir.decode(SYSENC, 'replace'))
+            files = os.listdir(dir)
             for f in files:
-                path = os.path.join(dir, f).encode(SYSENC, 'replace')
+                path = os.path.join(dir, f)
                 if (not ns.dir and os.path.isfile(path)) or (ns.dir and os.path.isdir(path)):
                     if ptn.match(path):
                         print_path(path, ns)
         else:
-            for root, dirs, files in os.walk(dir.decode(SYSENC, 'replace')):
+            for root, dirs, files in os.walk(dir):
                 for f in (dirs if ns.dir else files):
-                    path = os.path.join(root, f).encode(SYSENC, 'replace')
+                    path = os.path.join(root, f)
                     if ptn.match(path):
                         print_path(path, ns)
 
@@ -193,8 +189,8 @@ def main():
     try:
         ptn = make_patterns(ns)
         search_file(ptn, ns)
-    except Exception, e:
-        print str(e)
+    except Exception as e:
+        print(str(e))
 
 if __name__ == '__main__':
     main()

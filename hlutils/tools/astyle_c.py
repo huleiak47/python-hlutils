@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-ur'''
+r'''
 format C/C++/Java code using astyle
 '''
 import os

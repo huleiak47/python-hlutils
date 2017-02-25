@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-u'''
+'''
 This script is used to covert bytes "\\xaa\\xbb\\xcc" to hex string like "aa bb cc"
 '''
 
@@ -20,7 +20,7 @@ def parse_cmdline():
 def main():
     ns = parse_cmdline()
     for b in ns.bytes:
-        print hlutils.bytes_to_str(b, ns.lower, ns.prefix, ns.suffix, ns.separator)
+        print(hlutils.bytes_to_str(b.encode('mbcs', 'replace'), ns.lower, ns.prefix, ns.suffix, ns.separator))
 
 if __name__ == '__main__':
     main()

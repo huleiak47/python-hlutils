@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-#-*- coding:gbk -*-
+#-*- coding:utf-8 -*-
 ##
 # @file hexctrl.py
-# @brief Ò»¸öÖ»ÄÜÊäÈëHEX×Ö·ûµÄ¿Ø¼şÊµÏÖ
+# @brief ä¸€ä¸ªåªèƒ½è¾“å…¥HEXå­—ç¬¦çš„æ§ä»¶å®ç°
 # @author hulei
 # @version 1.0
 # @date 2011-06-01
 
 import wx
-import util
+from . import util
 
 ##
-# @brief ÊµÏÖÖ»ÄÜÊäÈëHEX×Ö·ûµÄÎÄ±¾¿Ø¼ş
+# @brief å®ç°åªèƒ½è¾“å…¥HEXå­—ç¬¦çš„æ–‡æœ¬æ§ä»¶
 class HexTextCtrl(wx.TextCtrl):
-    '''ÊµÏÖÖ»ÄÜÊäÈëHEX×Ö·ûµÄÎÄ±¾¿Ø¼ş'''
+    '''å®ç°åªèƒ½è¾“å…¥HEXå­—ç¬¦çš„æ–‡æœ¬æ§ä»¶'''
     HEX_CHAR = (ord('0'), ord('1'), ord('2'), ord('3'), ord('4'), ord('5'), ord('6'), ord('7'), ord('8'), ord('9'),
                   ord('A'), ord('B'), ord('C'), ord('D'), ord('E'), ord('F'),)
     HEX_LCHAR = (ord('a'), ord('b'), ord('c'), ord('d'), ord('e'), ord('f'),)
@@ -21,8 +21,8 @@ class HexTextCtrl(wx.TextCtrl):
 
     @staticmethod
     def __get_hex_str(s):
-        if isinstance(s, str):
-            s = unicode(s, 'gbk', 'replace')
+        if isinstance(s, bytes):
+            s = str(s, 'gbk', 'replace')
         ps = []
         for c in s:
             if ord(c) in HexTextCtrl.HEX_CHAR:
@@ -31,15 +31,15 @@ class HexTextCtrl(wx.TextCtrl):
                 ps.append(c.upper())
             else:pass
 
-        return u"".join(ps)
+        return "".join(ps)
 
 
     ##
-    # @brief ¹¹Ôì·½·¨
+    # @brief æ„é€ æ–¹æ³•
     #
-    # @param parent     ¸¸´°¿Ú
-    # @param id         ´°¿ÚID
-    # @param hexvalue   ³õÊ¼×Ö½ÚÁ÷
+    # @param parent     çˆ¶çª—å£
+    # @param id         çª—å£ID
+    # @param hexvalue   åˆå§‹å­—èŠ‚æµ
     # @param args
     # @param kwargs
     #
@@ -49,7 +49,7 @@ class HexTextCtrl(wx.TextCtrl):
         try:
             self.__value = self.__get_hex_str(hexvalue)
         except Exception:
-            self.__value = u''
+            self.__value = ''
         self.__maxLen = 32768
         self.Bind(wx.EVT_CHAR, self.OnChar)
         self.Bind(wx.EVT_MOUSE_EVENTS, self.OnMouse)
@@ -93,9 +93,9 @@ class HexTextCtrl(wx.TextCtrl):
             return 0
 
         if logicPos % 2 == 1:
-            return logicPos / 2 * 3 + 1
+            return int(logicPos / 2 * 3 + 1)
         else:
-            return logicPos / 2 * 3 - 1
+            return int(logicPos / 2 * 3 - 1)
 
     def __physicPos2LogicPos(self, physicPos):
         if physicPos == 0:
@@ -103,18 +103,18 @@ class HexTextCtrl(wx.TextCtrl):
 
         mod = physicPos % 3
         if mod == 0:
-            return physicPos / 3 * 2
+            return int(physicPos / 3 * 2)
         elif mod == 2:
-            return (physicPos + 1) / 3 * 2
+            return int((physicPos + 1) / 3 * 2)
         else:
-            return (physicPos + 2) / 3 * 2 - 1
+            return int((physicPos + 2) / 3 * 2 - 1)
 
     def __setLogicText(self, text):
-        wx.TextCtrl.SetValue(self, u' '.join([text[i:i + 2] for i in range(0, len(text), 2)]))
+        wx.TextCtrl.SetValue(self, ' '.join([text[i:i + 2] for i in range(0, len(text), 2)]))
 
     def __getLogicText(self):
         s = wx.TextCtrl.GetValue(self)
-        return s.replace(u" ", u"")
+        return s.replace(" ", "")
 
     def __remove(self, start, end):
         self.__value = self.__value[:start] + self.__value[end:]
@@ -126,7 +126,7 @@ class HexTextCtrl(wx.TextCtrl):
         start, end = self.GetSelection()
         if start == end and len(self.__value) == self.__maxLen * 2:
             return
-        self.__value = self.__value[:start] + unichr(keyCode) + self.__value[end:]
+        self.__value = self.__value[:start] + chr(keyCode) + self.__value[end:]
         self.__setLogicText(self.__value)
         self.SetSelection(start + 1, start + 1)
 
@@ -207,7 +207,7 @@ class HexTextCtrl(wx.TextCtrl):
 
         length = self.__maxLen * 2 - (len(value) - (end - start))
         p = p[:length]
-        self.__value = u"".join([value[:start], p, value[end:]])
+        self.__value = "".join([value[:start], p, value[end:]])
         self.__setLogicText(self.__value)
         self.SetSelection(start + len(p), start + len(p))
 
@@ -215,12 +215,12 @@ class HexTextCtrl(wx.TextCtrl):
         if event.RightUp():
             self.SetFocus()
             menu = wx.Menu()
-            menu.Append(self.popupID_CUT, u"Cu&t\t(T)")
-            menu.Append(self.popupID_COPY, u"&Copy\t(C)")
-            menu.Append(self.popupID_PASTE, u"&Paste\t(P)")
-            menu.Append(self.popupID_DELETE, u"&Delete\t(D)")
+            menu.Append(self.popupID_CUT, "Cu&t\t(T)")
+            menu.Append(self.popupID_COPY, "&Copy\t(C)")
+            menu.Append(self.popupID_PASTE, "&Paste\t(P)")
+            menu.Append(self.popupID_DELETE, "&Delete\t(D)")
             menu.AppendSeparator()
-            menu.Append(self.popupID_SELALL, u"Sel &All\t(A)")
+            menu.Append(self.popupID_SELALL, "Sel &All\t(A)")
             self.PopupMenu(menu)
             menu.Destroy()
             return
@@ -251,9 +251,9 @@ class HexTextCtrl(wx.TextCtrl):
 
 
     ##
-    # @brief °Ñ×Ö·û´®ÉèÖÃµ½¿Ø¼şÖĞ£¬²»ÔÚ0-9A-FµÄ×Ö·û»á±»Å×Æú
+    # @brief æŠŠå­—ç¬¦ä¸²è®¾ç½®åˆ°æ§ä»¶ä¸­ï¼Œä¸åœ¨0-9A-Fçš„å­—ç¬¦ä¼šè¢«æŠ›å¼ƒ
     #
-    # @param s  ×Ö·û´®
+    # @param s  å­—ç¬¦ä¸²
     #
     # @return
     def SetValue(self, s):
@@ -261,17 +261,17 @@ class HexTextCtrl(wx.TextCtrl):
         self.__setLogicText(self.__value)
 
     ##
-    # @brief ÉèÖÃÑ¡ÖĞµÄÎ»ÖÃ
+    # @brief è®¾ç½®é€‰ä¸­çš„ä½ç½®
     #
-    # @param start  Ñ¡ÖĞµÄ¿ªÊ¼Î»ÖÃ
-    # @param end    Ñ¡ÖĞµÄ½áÊøÎ»ÖÃ
+    # @param start  é€‰ä¸­çš„å¼€å§‹ä½ç½®
+    # @param end    é€‰ä¸­çš„ç»“æŸä½ç½®
     #
     # @return
     def SetSelection(self, start, end):
         wx.TextCtrl.SetSelection(self, self.__logicPos2PhysicPos(start), self.__logicPos2PhysicPos(end))
 
     ##
-    # @brief È¡µÃÑ¡ÖĞÎÄ±¾µÄ¿ªÊ¼ºÍ½áÊøÎ»ÖÃ
+    # @brief å–å¾—é€‰ä¸­æ–‡æœ¬çš„å¼€å§‹å’Œç»“æŸä½ç½®
     #
     # @return (start, end)
     def GetSelection(self):
@@ -279,30 +279,30 @@ class HexTextCtrl(wx.TextCtrl):
         return (self.__physicPos2LogicPos(start), self.__physicPos2LogicPos(end))
 
     ##
-    # @brief °Ñ×Ö½ÚÁ÷ÉèÖÃµ½¿Ø¼şÖĞ
+    # @brief æŠŠå­—èŠ‚æµè®¾ç½®åˆ°æ§ä»¶ä¸­
     #
-    # @param bytes  strÀàĞÍµÄ×Ö½ÚÁ÷
-    # @throws TypeError bytesµÄÀàĞÍ²»¶Ô
+    # @param bytes  strç±»å‹çš„å­—èŠ‚æµ
+    # @throws TypeError bytesçš„ç±»å‹ä¸å¯¹
     #
     # @return
     def SetBytes(self, bytes):
         if not isinstance(bytes, str):
             raise TypeError("bytes must be a str.")
-        self.__value = util.bytes_to_str(bytes[:self.__maxLen], lower = False, sep = u'')
+        self.__value = util.bytes_to_str(bytes[:self.__maxLen], lower = False, sep = '')
         self.__setLogicText(self.__value)
 
     ##
-    # @brief È¡µÃÎÄ±¾±íÊ¾µÄ×Ö½ÚÁ÷
+    # @brief å–å¾—æ–‡æœ¬è¡¨ç¤ºçš„å­—èŠ‚æµ
     #
-    # @return strÀàĞÍµÄ×Ö½ÚÁ÷
+    # @return strç±»å‹çš„å­—èŠ‚æµ
     def GetBytes(self):
         return util.str_to_bytes(self.__value)
 
     ##
-    # @brief ÉèÖÃ¿ØÖÆ±íÊ¾µÄ×Ö½ÚÁ÷µÄ×î´ó³¤¶È
+    # @brief è®¾ç½®æ§åˆ¶è¡¨ç¤ºçš„å­—èŠ‚æµçš„æœ€å¤§é•¿åº¦
     #
-    # @param maxlen  ×Ö½ÚÁ÷µÄ×î´ó³¤¶È£¬ÒÔ×Ö½ÚÎªµ¥Î»£¬±ØĞë´óÓÚµÈÓÚ0
-    # @throws ValueError  maxlenµÄÖµ²»ÕıÈ·
+    # @param maxlen  å­—èŠ‚æµçš„æœ€å¤§é•¿åº¦ï¼Œä»¥å­—èŠ‚ä¸ºå•ä½ï¼Œå¿…é¡»å¤§äºç­‰äº0
+    # @throws ValueError  maxlençš„å€¼ä¸æ­£ç¡®
     #
     # @return
     def SetMaxBytesLength(self, maxlen):
@@ -313,10 +313,10 @@ class HexTextCtrl(wx.TextCtrl):
 
 
 if __name__ == '__main__':
-    app = wx.PySimpleApp()
+    app = wx.App()
     dlg = wx.Dialog(None, -1, "Main")
     hexText = HexTextCtrl(dlg, -1, hexvalue = 'abcdefcczzc', pos = (10, 10), size = (300, 20))
     hexText.SetBytes("abcd")
-    print hexText.GetBytes()
+    print(hexText.GetBytes())
     hexText2 = wx.TextCtrl(dlg, -1, value = 'ABCDE', pos = (10, 40), size = (300, 20))
     dlg.ShowModal()

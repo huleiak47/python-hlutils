@@ -3,8 +3,7 @@
 
 import os
 import sys
-reload(sys)
-sys.setdefaultencoding("mbcs")
+
 import re
 import argparse
 from subprocess import call
@@ -20,48 +19,48 @@ def parse_cmdline():
             "html",
             "docx"],
         default="html",
-        help=u"转换到文件格式")
+        help="转换到文件格式")
     parser.add_argument(
         "--toc",
         "-t",
         action="store_true",
-        help=u"在正文前包含目录（对docx无效）")
+        help="在正文前包含目录（对docx无效）")
     parser.add_argument(
         "--number",
         "-n",
         action="store_true",
-        help=u"在标题前显示编号（对docx无效）")
+        help="在标题前显示编号（对docx无效）")
     parser.add_argument(
         "--indent",
         "-i",
         action='store_true',
-        help=u'在段落前缩进两个字符（建议中文文档设置，对docx无效）')
+        help='在段落前缩进两个字符（建议中文文档设置，对docx无效）')
     parser.add_argument(
         '--breakfirst',
         '-F',
         action='store_true',
-        help=u'标题页单独占一页（只对pdf有效）')
+        help='标题页单独占一页（只对pdf有效）')
     parser.add_argument(
         '--breakchapter',
         '-C',
         action='store_true',
-        help=u'每一章单独从新页开始（只对pdf有效）')
+        help='每一章单独从新页开始（只对pdf有效）')
     parser.add_argument(
-        '--filter', '-l', default="", help=u'指定一个命令来过滤生成的html，从STDIN读入，从STDOUT输出（对html与pdf有效）'
+        '--filter', '-l', default="", help='指定一个命令来过滤生成的html，从STDIN读入，从STDOUT输出（对html与pdf有效）'
     )
     parser.add_argument(
-        '--template', '-T', default="", help=u"指定一个模板文件（对html与pdf应该是一个html模板，对docx应该是一个docx模板）"
+        '--template', '-T', default="", help="指定一个模板文件（对html与pdf应该是一个html模板，对docx应该是一个docx模板）"
     )
     parser.add_argument(
-        '--variable', '-V', action = "append", help=u"指定传给pandoc的变量，见pandoc的帮助"
+        '--variable', '-V', action = "append", help="指定传给pandoc的变量，见pandoc的帮助"
         )
     parser.add_argument(
         '--outfile',
         '-o',
         action='store',
         default=None,
-        help=u'设置输出文件名，默认使用源文件名（包括路径）加相应后缀')
-    parser.add_argument("mdfile", nargs=1, help=u"Markdown文件")
+        help='设置输出文件名，默认使用源文件名（包括路径）加相应后缀')
+    parser.add_argument("mdfile", nargs=1, help="Markdown文件")
 
     return parser.parse_args(sys.argv[1:])
 
@@ -71,7 +70,7 @@ def get_base_dir():
 
 
 def filter_html(cmd, fname):
-    with open(fname) as f:
+    with open(fname, encoding="utf-8") as f:
         content = f.read()
     from subprocess import Popen, PIPE
     p = Popen(cmd, shell=1, stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -80,7 +79,7 @@ def filter_html(cmd, fname):
         sys.stderr.write(errdata)
         return p.returncode
     else:
-        with open(fname, "w") as f:
+        with open(fname, "w", encoding="utf-8") as f:
             f.write(outdata)
         return 0
 
@@ -121,12 +120,12 @@ def gen_html(ns):
 
 def filter_html_for_pdf(fname):
     reg_ref = re.compile(
-        br'<a href="#(fn\d+)" class="footnoteRef" id="fnref\d+"><sup>\d+</sup></a>')
+        r'<a href="#(fn\d+)" class="footnoteRef" id="fnref\d+"><sup>\d+</sup></a>')
     reg_fn = re.compile(
-        br'<li id="(fn\d+)"><p>([^<]*)<a href="#fnref\d+">[^<]*</a></p></li>')
+        r'<li id="(fn\d+)"><p>([^<]*)<a href="#fnref\d+">[^<]*</a></p></li>')
     fn_dict = {}
     contents = []
-    with open(fname) as f:
+    with open(fname, encoding="utf-8") as f:
         for line in f:
             contents.append(line)
             mobj = reg_fn.search(line)
@@ -135,7 +134,7 @@ def filter_html_for_pdf(fname):
 
     def repl_ref(mobj):
         return b'<span class="fn">' + fn_dict[mobj.group(1)] + b'</span>'
-    with open(fname, "w") as f:
+    with open(fname, "w", encoding="utf-8") as f:
         for line in contents:
             if line == b'<div class="footnotes">\n':
                 f.write(b"</div>\n</body>\n</html>\n")
@@ -221,7 +220,7 @@ def main():
     elif ns.format == "docx":
         ret = gen_docx(ns)
     else:
-        print "format error"
+        print("format error")
         ret = 4
     sys.exit(ret)
 

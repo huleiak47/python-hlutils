@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-u'''
+'''
 set console color
 '''
 import ctypes
@@ -44,9 +44,9 @@ if not islinux:
         _SetConsoleTextAttribute(_STDOUT, color)
 
     def get_color():
-        buf = ctypes.create_string_buffer('0x16' + '\x00' * 21)
+        buf = ctypes.create_string_buffer(b'0x16' + b'\x00' * 21)
         _GetConsoleScreenBufferInfo(_STDOUT, buf)
-        return ord(buf.raw[8])
+        return buf.raw[8]
 
 else:
     __cur_color = None
@@ -111,6 +111,6 @@ if __name__ == '__main__':
     output('this is a test for gray\n', GRAY)
     output('this is a test for white\n', WHITE)
     output('this is a test for black\n', BLACK)
-    print 'this is a test for origin'
-    print get_color()
+    print('this is a test for origin')
+    print(get_color())
 

@@ -27,12 +27,12 @@ def main():
         elif line.startswith("+"):
             color = cc.GREEN
         elif line.startswith(" "):
-            print line
+            print(line)
             continue
         else:
             continue
         cc.output(line, color)
-        print
+        print()
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-u'''
+'''
 execute command using arguments from stdin.
 '''
 
@@ -56,13 +56,13 @@ def replace_vars(cmdheads, path):
     base, ext = os.path.splitext(name)
     if ext.startswith('.'):
         ext = ext[1:]
-        cmds = map(lambda command: command.replace('$(PATH)', path).replace('$(DIR)', dir).replace('$(NAME)', name).replace('$(BASE)', base).replace('$(EXT)', ext), cmdheads)
+        cmds = [command.replace('$(PATH)', path).replace('$(DIR)', dir).replace('$(NAME)', name).replace('$(BASE)', base).replace('$(EXT)', ext) for command in cmdheads]
     return cmds
 
 def execute_command(cmds, ns):
     if cmds:
         if ns.printcmd:
-            print ' '.join(cmds)
+            print(' '.join(cmds))
         if not ns.noexec:
             call(to_windows_cmd(cmds), shell=True)
 
@@ -79,7 +79,7 @@ def main():
             cmds = replace_vars(cmdheads, line.strip())
             execute_command(cmds, ns)
     elif ns.maxargs == 0:
-        prelen = sum(map(lambda c: len(c) + 2, cmdheads), len(cmdheads) - 1)
+        prelen = sum([len(c) + 2 for c in cmdheads], len(cmdheads) - 1)
         totallen = prelen
         args = []
         while offset < length:

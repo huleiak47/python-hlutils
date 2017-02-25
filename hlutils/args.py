@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-u'''
+'''
 @file args.py
 @brief args
 @author hulei

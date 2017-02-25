@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-u'''
+'''
 @file tocb.py
 @brief copy text from stdin to system clipboard.
 @author hulei

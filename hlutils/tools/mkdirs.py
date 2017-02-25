@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-u'''
+'''
 Make dirs. This script is used to replace system mkdir command.
 '''
 
@@ -9,7 +9,7 @@ import os
 import argparse
 
 def parse_commandline():
-    u'''
+    '''
     @brief parse command line
     @return the parsed namespace
     '''
@@ -19,29 +19,29 @@ def parse_commandline():
     return parser.parse_args(sys.argv[1:])
 
 def makedir(dirname, ns):
-    u'''
+    '''
     @brief make a dir named dirname
     @param dirname the path of the dir
     @param ns the parsed namespace
     @return None
     '''
     if os.path.isfile(dirname):
-        print "'{}' is a file, cannot make dir!".format(dirname)
+        print("'{}' is a file, cannot make dir!".format(dirname))
         if ns.stop:
             sys.exit(1)
         else:
             return
     if os.path.isdir(dirname):
-        print "'{}' already exists!".format(dirname)
+        print("'{}' already exists!".format(dirname))
         if ns.stop:
             sys.exit(2)
         else:
             return
     try:
         os.makedirs(dirname)
-        print "make dir '{}' succeeded!".format(dirname)
+        print("make dir '{}' succeeded!".format(dirname))
     except os.error:
-        print "make dir '{}' failed!".format(dirname)
+        print("make dir '{}' failed!".format(dirname))
         if ns.stop:
             sys.exit(3)
         else:
@@ -49,7 +49,7 @@ def makedir(dirname, ns):
 
 
 def main():
-    u'''
+    '''
     @brief main
     @return None
     '''

@@ -25,7 +25,7 @@ setup(
     license=LICENSE,
     platforms=PLATFORMS,
     url='',
-    author='Hu Lei',
+    author='James Hu',
     author_email='huleiak47@gmail.com',
     packages=['hlutils', 'hlutils.tools'],
     package_dir={'hlutils': './hlutils', 'hlutils.tools': './hlutils/tools'},
@@ -33,5 +33,7 @@ setup(
     entry_points={
         "console_scripts": consoles,
     },
-    install_requires=["prompt_toolkit>=0.60", "ply"],
+    install_requires=["prompt_toolkit>=0.60",
+                      "ply>=3.0",
+                     "texttable>=0.8"],
 )

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-u'''
+'''
 execute command in loop mode
 '''
 
@@ -16,17 +16,17 @@ from subprocess import call
 from hlutils.args import to_windows_cmd
 
 def help():
-    print """
+    print("""
     forcmd -n 100 -e command ...
     usage:
         -h, --help      show this help message
         -n maxloop      set loop count, default is {}
         -e              exit when command exit code is not 0
-        """.format(sys.maxint)
+        """.format(sys.maxsize))
 
 def main():
     index = 1
-    maxloop = sys.maxint
+    maxloop = sys.maxsize
     exit_when_faild = 0
     while index < len(sys.argv):
         if sys.argv[index] == '-n':
@@ -42,15 +42,15 @@ def main():
             break
 
     command = sys.argv[index:]
-    for i in xrange(maxloop):
-        print "Loop:", i + 1
+    for i in range(maxloop):
+        print("Loop:", i + 1)
         cmd = to_windows_cmd(command)
-        print cmd
+        print(cmd)
         ret = call(cmd, shell=True)
         if exit_when_faild and ret != 0:
-            print "Exit code of command is %d." % ret
+            print("Exit code of command is %d." % ret)
             sys.exit(ret)
-    print "Loop over."
+    print("Loop over.")
     sys.exit(0)
 
 if __name__ == '__main__':

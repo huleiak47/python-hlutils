@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-u'''
+'''
 loop up Windows error string from error code
 '''
 
 import sys
 import ctypes
 def help():
-    print "winerr.py errnum"
+    print("winerr.py errnum")
 
 def main():
     if len(sys.argv) != 2:
@@ -19,11 +19,11 @@ def main():
         buf = ctypes.create_unicode_buffer(65535)
         ret = ctypes.windll.kernel32.FormatMessageW(0x00001000, 0, errnum, 0, buf, 65535, 0)
         if ret == 0:
-            print "Cannot find error string."
+            print("Cannot find error string.")
         else:
-            print buf.value[:ret]
-    except Exception, e:
-        print str(e)
+            print(buf.value[:ret])
+    except Exception as e:
+        print(str(e))
         help()
         return
 

@@ -2,8 +2,8 @@
 # -*- coding:utf-8 -*-
 
 import re
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import sys
 import locale
 from hlutils import consolecolor as cc
@@ -12,8 +12,8 @@ SYSENC = locale.getdefaultlocale()[1]
 
 def debug():
     xml = open("word.xml").read()
-    print get_text(xml)
-    print get_elements_by_path(xml, "custom-translation/content")
+    print(get_text(xml))
+    print(get_elements_by_path(xml, "custom-translation/content"))
     #print_translations(xml, False, False)
 def get_elements_by_path(xml, elem):
     if type(xml) == type(''):
@@ -49,27 +49,27 @@ def get_elements(xml, elem):
     return result
 
 def crawl_xml(queryword):
-    return urllib2.urlopen("http://dict.yodao.com/search?keyfrom=dict.python&q=" + urllib.quote_plus(queryword.decode(SYSENC).encode("utf-8")) + "&xmlDetail=true&doctype=xml").read()
+    return urllib.request.urlopen("http://dict.yodao.com/search?keyfrom=dict.python&q=" + urllib.parse.quote_plus(queryword.decode(SYSENC).encode("utf-8")) + "&xmlDetail=true&doctype=xml").read()
 
 def print_translations(xml, with_color, detailed):
         #print xml
     original_query = get_elements(xml, "original-query")
     queryword = get_text(original_query[0])
     custom_translations = get_elements(xml, "custom-translation")
-    cc.output(queryword, cc.YELLOW); print ""
+    cc.output(queryword, cc.YELLOW); print("")
     translated = False
 
     for cus in custom_translations:
         source = get_elements_by_path(cus, "source/name")
 
-        cc.output("Translations from " + source[0].decode("utf-8").encode(SYSENC), cc.RED);print ""
+        cc.output("Translations from " + source[0].decode("utf-8").encode(SYSENC), cc.RED);print("")
         contents = get_elements_by_path(cus, "translation/content")
         if with_color:
             for content in contents[0:5]:
-                cc.output(get_text(content), cc.GREEN);print ""
+                cc.output(get_text(content), cc.GREEN);print("")
         else:
             for content in contents[0:5]:
-                print get_text(content)
+                print(get_text(content))
         translated = True
 
     yodao_translations = get_elements(xml, "yodao-web-dict")
@@ -78,7 +78,7 @@ def print_translations(xml, with_color, detailed):
         webtrans = get_elements(trans, "web-translation")
         for web in webtrans[0:5]:
             if not printed:
-                cc.output("Translations from yodao:", cc.RED);print ""
+                cc.output("Translations from yodao:", cc.RED);print("")
                 printed = True
             keys = get_elements(web, "key")
             values = get_elements_by_path(web, "trans/value")
@@ -87,12 +87,12 @@ def print_translations(xml, with_color, detailed):
             value = values[0].strip()
             if with_color:
                 cc.output(get_text(key) + ":\t", cc.YELLOW)
-                cc.output(get_text(value), cc.GREEN);print ""
+                cc.output(get_text(value), cc.GREEN);print("")
             else:
-                print get_text(value)
+                print(get_text(value))
 
 def usage():
-    print "usage: yd.py word_to_translate"
+    print("usage: yd.py word_to_translate")
 
 def main():
     argv = sys.argv[1:]

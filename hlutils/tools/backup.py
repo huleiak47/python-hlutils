@@ -7,7 +7,7 @@ backup or recover files.
 import os, sys, argparse, shutil, glob, re
 
 def print_info(msg, fobj = sys.stdout):
-    print >> fobj, msg
+    print(msg, file=fobj)
 
 def print_none(msg, fobj = None):
     pass
@@ -34,15 +34,15 @@ def backup_file(fname, ns):
     try:
         shutil.copy2(fname, destname)
         print_info("backup '%s' to '%s'" % (fname, destname))
-    except shutil.Error, e:
+    except shutil.Error as e:
         print_info("backup failed: '%s'" % fname, sys.stderr)
 
 def recover_file(fname, ns):
     destname = fname + ns.extension
     namelen = len(destname)
     backups = glob.glob(destname + "*")
-    backups = filter(lambda f: re.match(r'^\d*$', f[namelen:]), backups)
-    backups = filter(lambda f: os.path.isfile(f), backups)
+    backups = [f for f in backups if re.match(r'^\d*$', f[namelen:])]
+    backups = [f for f in backups if os.path.isfile(f)]
     if not backups:
         print_info("backup file not found for '%s'" % fname, sys.stderr)
         return
@@ -51,7 +51,7 @@ def recover_file(fname, ns):
     try:
         shutil.copy2(backupname, fname)
         print_info("recover '%s' from '%s'" % (fname, backupname))
-    except shutil.Error, e:
+    except shutil.Error as e:
         print_info("recover '%s' from '%s' failed!" % (fname, backupname), sys.stderr)
 
 def main():

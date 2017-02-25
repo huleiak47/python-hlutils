@@ -15,15 +15,15 @@ def format_file(file, mode):
     with open(file, 'rb') as f:
         content = f.read()
     if mode == MODE_DOS:
-        content = content.replace('\r\n', '\n')
-        content = content.replace('\r', '\n')
-        content = content.replace('\n', '\r\n')
+        content = content.replace(b'\r\n', b'\n')
+        content = content.replace(b'\r', b'\n')
+        content = content.replace(b'\n', b'\r\n')
     elif mode == MODE_UNIX:
-        content = content.replace('\r\n', '\n')
-        content = content.replace('\r', '\n')
+        content = content.replace(b'\r\n', b'\n')
+        content = content.replace(b'\r', b'\n')
     else:
-        content = content.replace('\r\n', '\r')
-        content = content.replace('\n', '\r')
+        content = content.replace(b'\r\n', b'\r')
+        content = content.replace(b'\n', b'\r')
     with open(file, 'wb') as f:
         f.write(content)
 
@@ -39,8 +39,8 @@ def main():
     for file in opts.file:
         try:
             format_file(file, opts.mode)
-        except Exception, e:
-            print 'format "%s" failed. %s' % (file, str(e))
+        except Exception as e:
+            print('format "%s" failed. %s' % (file, str(e)))
 
 
 

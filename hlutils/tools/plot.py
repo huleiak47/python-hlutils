@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-ur'''
+r'''
 Plot a function.
 '''
 # Changes:
@@ -44,7 +44,7 @@ def main():
     xlist = []
     step = (ns.end - ns.start) / ns.quality
     val = ns.start
-    for i in xrange(ns.quality):
+    for i in range(ns.quality):
         xlist.append(val)
         val += step
 
@@ -65,8 +65,8 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception, e:
+    except Exception as e:
         import traceback
         traceback.print_exc()
-        print type(e).__name__, ":", str(e)
+        print(type(e).__name__, ":", str(e))
         sys.exit(1)

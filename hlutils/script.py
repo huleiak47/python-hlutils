@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#-*- coding:gbk -*-
-# Ä£ÄâÊó±êºÍ¼üÅÌ¹¦ÄÜ
+#-*- coding:utf-8 -*-
+# æ¨¡æ‹Ÿé¼ æ ‡å’Œé”®ç›˜åŠŸèƒ½
 
 from ctypes import *
 import time
@@ -54,17 +54,17 @@ VK_INSERT         = 0x2D
 VK_DELETE         = 0x2E
 VK_HELP           = 0x2F
 
-VK_C0             = 0xC0 #¡°`¡±ºÍ¡°~¡±
-VK_BD             = 0xBD #¡°-¡±ºÍ¡°_¡±
-VK_BB             = 0xBB #¡°=¡±ºÍ¡°+¡±
-VK_DC             = 0xDC #¡°\¡±ºÍ¡°|¡±
-VK_DB             = 0xDB #¡°[¡±ºÍ¡°{¡±
-VK_DD             = 0xDD #¡°]¡±ºÍ¡°}¡±
-VK_BA             = 0xBA #¡°¡±ºÍ¡°:¡±
-VK_DE             = 0xDE #¡°'¡±ºÍ¡°"¡±
-VK_BC             = 0xBC #¡°,¡±ºÍ¡°<¡±
-VK_BE             = 0xBE #¡°.¡±ºÍ¡°>¡±
-VK_BF             = 0xBF #¡°/¡±ºÍ¡°?¡±
+VK_C0             = 0xC0 #â€œ`â€å’Œâ€œ~â€
+VK_BD             = 0xBD #â€œ-â€å’Œâ€œ_â€
+VK_BB             = 0xBB #â€œ=â€å’Œâ€œ+â€
+VK_DC             = 0xDC #â€œ\â€å’Œâ€œ|â€
+VK_DB             = 0xDB #â€œ[â€å’Œâ€œ{â€
+VK_DD             = 0xDD #â€œ]â€å’Œâ€œ}â€
+VK_BA             = 0xBA #â€œâ€å’Œâ€œ:â€
+VK_DE             = 0xDE #â€œ'â€å’Œâ€œ"â€
+VK_BC             = 0xBC #â€œ,â€å’Œâ€œ<â€
+VK_BE             = 0xBE #â€œ.â€å’Œâ€œ>â€
+VK_BF             = 0xBF #â€œ/â€å’Œâ€œ?â€
 
 #{* VK_0 thru VK_9 are the same as ASCII '0' thru '9' (0x30 - 0x39) *}
 VK_0              = 0x30
@@ -233,11 +233,11 @@ g_input = INPUT()
 g_pt = PT()
 
 def wait(ms):
-    "µÈ´ıÊ±¼ä£¬µ¥Î»£ººÁÃë"
+    "ç­‰å¾…æ—¶é—´ï¼Œå•ä½ï¼šæ¯«ç§’"
     time.sleep(ms / 1000.0)
 
 def move(x, y, absolute = True):
-    "ÒÆ¶¯¹â±ê£¬µ±absoluteÎªTrueÊ±£¬x, y±íÊ¾ÆÁÄ»µÄ¾ø¶Ô×ù±ê£¬ ·ñÔò±íÊ¾Ïà¶Ô¹â±êµ±Ç°Î»ÖÃµÄÒÆ¶¯¾àÀë"
+    "ç§»åŠ¨å…‰æ ‡ï¼Œå½“absoluteä¸ºTrueæ—¶ï¼Œx, yè¡¨ç¤ºå±å¹•çš„ç»å¯¹åº§æ ‡ï¼Œ å¦åˆ™è¡¨ç¤ºç›¸å¯¹å…‰æ ‡å½“å‰ä½ç½®çš„ç§»åŠ¨è·ç¦»"
     if not absolute:
         windll.user32.GetCursorPos(byref(g_pt))
         x = g_pt.x + x
@@ -245,64 +245,64 @@ def move(x, y, absolute = True):
     windll.user32.SetCursorPos(x, y)
 
 def left_down():
-    "Êó±ê×ó¼ü°´ÏÂ"
+    "é¼ æ ‡å·¦é”®æŒ‰ä¸‹"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_MOUSE
     g_input.union.mi.dwFlags = MOUSEEVENTF_LEFTDOWN
     SendInput(1, byref(g_input), sizeof(INPUT))
 
 def left_up():
-    "Êó±ê×ó¼üµ¯Æğ"
+    "é¼ æ ‡å·¦é”®å¼¹èµ·"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_MOUSE
     g_input.union.mi.dwFlags = MOUSEEVENTF_LEFTUP
     SendInput(1, byref(g_input), sizeof(INPUT))
 
 def left_click():
-    "Êó±ê×ó½¡µ¥»÷"
+    "é¼ æ ‡å·¦å¥å•å‡»"
     left_down()
     left_up()
 
 def right_down():
-    "Êó±êÓÒ¼ü°´ÏÂ"
+    "é¼ æ ‡å³é”®æŒ‰ä¸‹"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_MOUSE
     g_input.union.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN
     SendInput(1, byref(g_input), sizeof(INPUT))
 
 def right_up():
-    "Êó±êÓÒ½¡µ¯Æğ"
+    "é¼ æ ‡å³å¥å¼¹èµ·"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_MOUSE
     g_input.union.mi.dwFlags = MOUSEEVENTF_RIGHTUP
     SendInput(1, byref(g_input), sizeof(INPUT))
 
 def right_click():
-    "Êó±êÓÒ½¡µ¥»÷"
+    "é¼ æ ‡å³å¥å•å‡»"
     right_down()
     right_up()
 
 def middle_down():
-    "Êó±êÖĞ¼ü°´ÏÂ"
+    "é¼ æ ‡ä¸­é”®æŒ‰ä¸‹"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_MOUSE
     g_input.union.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN
     SendInput(1, byref(g_input), sizeof(INPUT))
 
 def middle_up():
-    "Êó±êÖĞ¼üµ¯Æğ"
+    "é¼ æ ‡ä¸­é”®å¼¹èµ·"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_MOUSE
     g_input.union.mi.dwFlags = MOUSEEVENTF_MIDDLEUP
     SendInput(1, byref(g_input), sizeof(INPUT))
 
 def middle_click():
-    "Êó±êÖĞ¼üµ¥»÷"
+    "é¼ æ ‡ä¸­é”®å•å‡»"
     middle_down()
     middle_up()
 
 def wheel_move(delta):
-    "Êó±ê¹öÂÖ¹ö¶¯£¬ÕıÊı±íÊ¾ÏòÉÏ£¬ ¸ºÊı±íÊ¾ÏòÏÂ"
+    "é¼ æ ‡æ»šè½®æ»šåŠ¨ï¼Œæ­£æ•°è¡¨ç¤ºå‘ä¸Šï¼Œ è´Ÿæ•°è¡¨ç¤ºå‘ä¸‹"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_MOUSE
     g_input.union.mi.dwFlags = MOUSEEVENTF_WHEEL
@@ -310,7 +310,7 @@ def wheel_move(delta):
     SendInput(1, byref(g_input), sizeof(INPUT))
 
 def key_down(key):
-    "½¡ÅÌ°´¼ü°´ÏÂ£¬ keyÎªĞéÄâ¼üÖµ"
+    "å¥ç›˜æŒ‰é”®æŒ‰ä¸‹ï¼Œ keyä¸ºè™šæ‹Ÿé”®å€¼"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_KEYBOARD
     g_input.union.ki.wVk = c_ushort(key)
@@ -319,7 +319,7 @@ def key_down(key):
     time.sleep(0.05)
 
 def key_up(key):
-    "½¡ÅÌ°´¼üµ¯Æğ£¬ keyÎªĞéÄâ¼üÖµ"
+    "å¥ç›˜æŒ‰é”®å¼¹èµ·ï¼Œ keyä¸ºè™šæ‹Ÿé”®å€¼"
     memset(byref(g_input), 0, sizeof(INPUT))
     g_input.type = INPUT_KEYBOARD
     g_input.union.ki.wVk = c_ushort(key)
@@ -328,6 +328,6 @@ def key_up(key):
     time.sleep(0.05)
 
 def key_press(key):
-    "½¡ÅÌ°´¼üµ¥»÷£¬ keyÎªĞéÄâ¼üÖµ"
+    "å¥ç›˜æŒ‰é”®å•å‡»ï¼Œ keyä¸ºè™šæ‹Ÿé”®å€¼"
     key_down(key)
     key_up(key)

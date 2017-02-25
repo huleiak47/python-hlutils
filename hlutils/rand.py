@@ -18,15 +18,15 @@ def randbytes(length):
     if length < 0:
         raise ValueError("length must be larger than 0")
     while length:
-        lst.append(chr(random.randint(0, 255)))
+        lst.append(random.randint(0, 255))
         length -= 1
-    return "".join(lst)
+    return bytes(lst)
 
 __all__ = ["randbytes"]
 
 def test():
-    import hlutils
-    print hlutils.bytes_to_str(randbytes(10))
+    import util
+    print(util.bytes_to_str(randbytes(10)))
 
 if __name__ == "__main__":
     test()

@@ -4,7 +4,7 @@
 import sys
 sys.argv.insert(1, "--format=html")
 
-from mdconvert import main
+from .mdconvert import main
 
 if __name__ == "__main__":
     main()

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-__version__ = '1.0.17'
+__version__ = '1.1.0'
 
-import util
+from . import util
 from .util import *
 
 __all__ = util.__all__ + [

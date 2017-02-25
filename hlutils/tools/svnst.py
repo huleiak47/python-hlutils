@@ -34,10 +34,10 @@ def main():
         elif line.startswith("D"):
             color = cc.SKYBLUE
         else:
-            print line.split()[1] if single else line
+            print(line.split()[1] if single else line)
             continue
         cc.output(line.split()[1] if single else line, color)
-        print
+        print()
 
 if __name__ == "__main__":
     main()

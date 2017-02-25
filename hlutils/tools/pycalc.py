@@ -12,7 +12,7 @@ import sys
 from math import *
 
 def main():
-    print eval(" ".join(sys.argv[1:]))
+    print(eval(" ".join(sys.argv[1:])))
 
 if __name__ == "__main__":
     main()

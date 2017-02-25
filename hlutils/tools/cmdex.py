@@ -3,7 +3,7 @@
 r'''
 An enhanced console for replacing cmd.exe.
 '''
-from __future__ import unicode_literals
+
 
 __version__ = "1.0.16"
 
@@ -14,6 +14,7 @@ import subprocess as sp
 import ctypes
 import re
 import random
+from functools import cmp_to_key as cmpkey
 
 def dprint(msg):
     if 1:
@@ -133,7 +134,7 @@ class GitCmdCompeter(WordCompleter):
         except OSError:
             pass
 
-        GIT_CMDS.sort(cmp=lambda x, y: len(x) - len(y))
+        GIT_CMDS.sort(key=cmpkey(lambda x, y: len(x) - len(y)))
         WordCompleter.__init__(self, GIT_CMDS)
 
 
@@ -151,7 +152,7 @@ class SvnCmdCompleter(WordCompleter):
             "resolve", "resolved", "revert", "status", "stat", "st", "switch",
             "sw", "unlock", "update", "up", "upgrade",
         ]
-        SVN_CMDS.sort(cmp=lambda x, y: len(x) - len(y))
+        SVN_CMDS.sort(key=cmpkey(lambda x, y: len(x) - len(y)))
         WordCompleter.__init__(self, SVN_CMDS)
 
 
@@ -246,7 +247,7 @@ class ExecutableCompleter(Completer):
         self.pathcompleter = PathCompleter(
             only_directories=False,
             expanduser=True)
-        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS + _InternalCmds.keys(), ignore_case=True)
+        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS + list(_InternalCmds.keys()), ignore_case=True)
 
     def get_completions(self, document, complete_event):
         text_prefix = document.text_before_cursor
@@ -368,17 +369,17 @@ class CmdExCompleter(GrammarCompleter):
 
 def ch_title(title=None):
     if title:
-        ctypes.windll.kernel32.SetConsoleTitleW(unicode(title))
+        ctypes.windll.kernel32.SetConsoleTitleW(str(title))
     else:
-        cwd = os.getcwdu()
+        cwd = os.getcwd()
         cwds = cwd.split("\\")
         cwds.reverse()
         ctypes.windll.kernel32.SetConsoleTitleW("/".join(cwds) + " - CMDEX")
 
 
 def dump_banner():
-    print """cmdex.py %s  An enhanced console
-    """ % __version__
+    print("""cmdex.py %s  An enhanced console
+    """ % __version__)
 
 
 def init():
@@ -414,7 +415,7 @@ def process_cd(cmd):
     cwd = os.getcwd()
     params = re.split(r"\s+", cmd, 1)
     if len(params) == 1 or params[1] == "":
-        print cwd.replace("\\", "/")
+        print(cwd.replace("\\", "/"))
         return
     param = expand_env(params[1].strip())
     if param == "-":
@@ -423,7 +424,7 @@ def process_cd(cmd):
         _ch_dir(cwd.split(':')[0] + ":/")
     else:
         if not os.path.isdir(param):
-            print "Cannot find directory: '%s'" % param
+            print("Cannot find directory: '%s'" % param)
         else:
             _ch_dir(os.path.abspath(param))
 
@@ -435,7 +436,7 @@ def process_set(cmd):
         # dump_env
         keys = sorted(os.environ.keys())
         for key in keys:
-            print key, "=", os.environ[key]
+            print(key, "=", os.environ[key])
     else:
         param = params[1].strip()
         if "=" in param:
@@ -443,17 +444,17 @@ def process_set(cmd):
             os.environ[k.strip()] = expand_env(v.strip())
         else:
             count = 0
-            keys = os.environ.keys()
+            keys = list(os.environ.keys())
             for key in keys:
                 if key.upper().startswith(param.upper()):
-                    print key, "=", os.environ[key]
+                    print(key, "=", os.environ[key])
                     count += 1
             if not count:
-                print "Environment variable '%s' is not defined." % param
+                print("Environment variable '%s' is not defined." % param)
 
 def process_history(cmd):
     for cmd in hist_obj.strings:
-        print cmd
+        print(cmd)
 
 
 
@@ -598,7 +599,7 @@ def t_STRING(t):
 
 
 def t_error(t):
-    print "Illegal char '%s'" % t.value[0]
+    print("Illegal char '%s'" % t.value[0])
     t.lexer.skip(1)
 
 lexer = lex.lex()
@@ -703,7 +704,7 @@ def get_prompt_args():
         When Ctrl-V has been pressed, insert clipboard text to the cursor.
         """
         from hlutils import get_clipboard_text
-        text = get_clipboard_text(True)
+        text = get_clipboard_text()
         event.cli.current_buffer.insert_text(text)
 
     @key_bindings_manager.registry.add_binding(Keys.ControlO)
@@ -720,7 +721,7 @@ def get_prompt_args():
         selectfile = os.path.expandvars("$TMP/cmdex_%d.sel" % randval)
         with open(histfile, "w") as f:
             for cmd in hist_obj.strings:
-                print >> f, cmd.encode("utf-8")
+                print(cmd.encode("utf-8"), file=f)
 
         os.system("vim.exe -R --noplugin + -u %s -- %s" % (rcfile, histfile))
         os.remove(histfile)
@@ -744,7 +745,7 @@ def get_prompt_args():
         "get_prompt_tokens": lambda cli: [
             (Token.HOST, "%s@%s  " %
              (os.getenv("USERNAME", ""), os.getenv("COMPUTERNAME", ""))),
-            (Token.PATH, "%s\n" % os.getcwdu().replace("\\", "/")),
+            (Token.PATH, "%s\n" % os.getcwd().replace("\\", "/")),
             (Token.TIP, "$ "),
         ],
         "completer": CmdExCompleter(),
@@ -766,7 +767,7 @@ def main():
                 default_input = ""
                 cmd = prompt(**args).strip()
             except KeyboardInterrupt:
-                print
+                print()
                 continue
             if cmd:
                 if filter_cmd(cmd):
@@ -778,11 +779,11 @@ def main():
         except Exception as e:
             import traceback
             traceback.print_exc()
-            print type(e).__name__, ":", str(e)
+            print(type(e).__name__, ":", str(e))
 
 if __name__ == "__main__":
     if sys.platform.startswith("linux"):
-        print "Linux is not supported yet."
+        print("Linux is not supported yet.")
         sys.exit(1)
     main()
 

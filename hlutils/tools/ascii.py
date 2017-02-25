@@ -138,14 +138,14 @@ def main():
     table = ttb.Texttable()
     table.header(["CHAR", "DEC", "HEX", "BIN", "DESCRIPTION"])
     table.set_cols_align(["c", "r", "r", "r", "l"])
-    for i in xrange(len(charmap)):
+    for i in range(len(charmap)):
         char = charmap[i][0]
         dec = i
         hex = '0x' + format(i, "02X")
         bin = 'b ' + format(i, "08b")
         des = charmap[i][1] if len(charmap[i]) > 1 else ""
         table.add_row([char, dec, hex, bin, des])
-    print table.draw()
+    print(table.draw())
 
 if __name__ == '__main__':
     main()

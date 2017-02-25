@@ -10,7 +10,7 @@ from subprocess import call
 def main():
     argc = len(sys.argv)
     if argc == 1:
-        print "usage: qf [wildcard ...] regex"
+        print("usage: qf [wildcard ...] regex")
         sys.exit(1)
 
     ffargs = []

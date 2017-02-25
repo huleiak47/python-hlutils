@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-u'''
+'''
 Change text encoding from stdin to stdout.
 '''
 
+import os
 import sys
 #import cchardet as chardet
 import chardet
+
+# open stdin/stdout as bytes mode
+stdin = os.fdopen(sys.stdin.fileno(), 'rb')
+stdout = os.fdopen(sys.stdout.fileno(), 'wb')
 
 def try_decode(text):
     codecs = ['ascii', 'gb2312', 'utf-8', 'gbk']
@@ -26,7 +31,7 @@ def test_decode(text, destcoding):
             text = text.decode(ret['encoding']).encode(destcoding)
         except Exception:
             pass
-    sys.stdout.write(text)
+    stdout.write(text)
 
 
 def main():
@@ -35,7 +40,7 @@ def main():
     if len(sys.argv) > 1:
         destcoding = sys.argv[1]
 
-    text = sys.stdin.read()
+    text = stdin.read()
     codec, unistr = try_decode(text)
     mustenc = True
     if codec == 'ascii':
@@ -49,9 +54,9 @@ def main():
         return
 
     if mustenc:
-        sys.stdout.write(unistr.encode(destcoding, 'replace'))
+        stdout.write(unistr.encode(destcoding, 'replace'))
     else:
-        sys.stdout.write(text)
+        stdout.write(text)
 
 if __name__ == '__main__':
     main()
