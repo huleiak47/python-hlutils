@@ -53,7 +53,7 @@ def show_error(msg):
         print(msg)
 
 def decode_bytes(string):
-    encs = ["utf-8", "gbk18030", "big5", "latin-1"]
+    encs = ["utf-8", "gbk", "big5", "latin-1"]
     for enc in encs:
         try:
             return string.decode(enc, "strict")
