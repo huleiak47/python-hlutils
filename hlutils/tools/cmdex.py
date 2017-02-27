@@ -721,7 +721,7 @@ def get_prompt_args():
         selectfile = os.path.expandvars("$TMP/cmdex_%d.sel" % randval)
         with open(histfile, "w") as f:
             for cmd in hist_obj.strings:
-                print(cmd.encode("utf-8"), file=f)
+                print(cmd, file=f)
 
         os.system("vim.exe -R --noplugin + -u %s -- %s" % (rcfile, histfile))
         os.remove(histfile)
@@ -729,7 +729,7 @@ def get_prompt_args():
         global default_input
         if os.path.exists(selectfile):
             text = open(selectfile).read().strip()
-            default_input = text.decode("utf-8", "ignore")
+            default_input = text
             os.remove(selectfile)
 
         event.cli.current_buffer.cursor_right(999)
