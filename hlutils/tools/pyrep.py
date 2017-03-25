@@ -8,12 +8,18 @@ import os
 import sys
 import argparse
 import re
-import shutil
+
+import locale
+SYSENC = locale.getdefaultlocale()[1]
+
+stdin = os.fdopen(sys.stdin.fileno(), 'rb')
+stdout = os.fdopen(sys.stdout.fileno(), 'wb')
 
 def parse_command():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--from', metavar='pattern', dest='pattern', action='store', help='pattern of string to be replaced')
     parser.add_argument('-t', '--to', metavar='str', action='store', help='pattern of string to replace')
+    parser.add_argument('-e', '--encoding', action='store', default=SYSENC, help='encoding of file, default ' + SYSENC)
     parser.add_argument('-i', '--inplace', action='store_true', help='change file, not print to stdout')
     parser.add_argument('-u', '--backup', metavar='ext', action='store', help='backup file before change and set file extend name')
     parser.add_argument('-I', '--ignorecase', action='store_true', help='ignore case')
@@ -29,37 +35,12 @@ def do_replace(string, reobj, to_str):
     else:
         return reobj.sub(to_str, string)
 
-def decode_bytes(string):
-    encs = ["utf-8", "gbk18030", "big5", "latin-1"]
-    for enc in encs:
-        try:
-            return string.decode(enc, "strict"), enc
-        except UnicodeError:
-            pass
-    return string.decode("utf-8", "ignore"), 'utf-8'
-
-def rep_file(fname, reobj, to_str, ns):
-    string = open(fname, 'rb').read().replace(b'\r', b'')
-    string, fenc = decode_bytes(string)
-    retstr = do_replace(string, reobj, to_str)
-    changed = (retstr != string)
-
-    if ns.inplace:
-        if changed:
-            if ns.backup:
-                if os.path.exists(fname + ns.backup):
-                    os.remove(fname + ns.backup)
-                shutil.copy2(fname, fname + ns.backup)
-            with open(fname, 'w', encoding=fenc) as f:
-                f.write(retstr)
-    else:
-        print(retstr)
-
 
 def main():
     ns = parse_command()
     reobj = None
     if ns.pattern is not None:
+        ns.pattern = ns.pattern.encode(ns.encoding)
         flags = 0
         if ns.ignorecase:
             flags |= re.IGNORECASE
@@ -70,13 +51,26 @@ def main():
         reobj = re.compile(ns.pattern, flags)
     to_str = None
     if ns.to is not None:
-        to_str = ns.to
+        to_str = ns.to.encode(ns.encoding)
     if ns.filename:
         for fname in ns.filename:
-            rep_file(fname, reobj, to_str, ns)
+            with open(fname, 'rb') as f:
+                string = f.read()
+                retstr = do_replace(string, reobj, to_str)
+                changed = (retstr != string)
+            if ns.inplace:
+                if changed:
+                    if ns.backup:
+                        if os.path.exists(fname + ns.backup):
+                            os.remove(fname + ns.backup)
+                        os.rename(fname, fname + ns.backup)
+                    with open(fname, 'wb') as f:
+                        f.write(retstr)
+            else:
+                stdout.write(retstr)
     else:
-        retstr = do_replace(sys.stdin.read(), reobj, to_str)
-        sys.stdout.write(retstr)
+        retstr = do_replace(stdin.read(), reobj, to_str)
+        stdout.write(retstr)
 
 
 if __name__ == '__main__':
@@ -87,3 +81,4 @@ if __name__ == '__main__':
         traceback.print_exc()
         print(str(e))
         sys.exit(1)
+

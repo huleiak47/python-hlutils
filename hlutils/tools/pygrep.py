@@ -4,6 +4,7 @@
 grep written in python.
 '''
 
+import os
 import sys
 import platform
 import argparse
@@ -17,6 +18,9 @@ except:
 import locale
 SYSENC = locale.getdefaultlocale()[1]
 
+stdin = os.fdopen(sys.stdin.fileno(), 'rb')
+stdout = os.fdopen(sys.stdout.fileno(), 'wb')
+
 FILES_NONE = 0
 FILES_MATCH = 1
 FILES_NOMATCH = 2
@@ -28,6 +32,7 @@ onlyone = True
 
 def parse_command():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-e', '--encoding', action='store', default=None, help='change file encoding to ENCODING before matching and set stdout encoding to ENCODING. default None')
     parser.add_argument('-I', '--ignorecase', action='store_true', help='ignore case')
     parser.add_argument('-M', '--multiline', action='store_true', help='`^` and `$` match beginning and end of each line')
     parser.add_argument('-D', '--dotall', action='store_true', help='Make the `.` special character match any character at all, including a newline; without this flag, `.` will match anything except a newline')
@@ -52,19 +57,16 @@ def show_error(msg):
     if not ns.nomessages:
         print(msg)
 
-def decode_bytes(string):
-    encs = ["utf-8", "gbk", "big5", "latin-1"]
-    for enc in encs:
-        try:
-            return string.decode(enc, "strict")
-        except UnicodeError:
-            pass
-    return string.decode("utf-8", "ignore")
-
+def change_enc(string):
+    enc = chardet.detect(string)['encoding']
+    if enc and enc.lower() != ns.encoding.lower():
+        return string.decode(enc, 'replace').encode(ns.encoding, 'replace')
+    else:
+        return string
 
 def search_file(fname):
     if fname == ns.label:
-        string = sys.stdin.read()
+        string = stdin.read()
     else:
         try:
             string = open(fname, 'rb').read()
@@ -72,35 +74,44 @@ def search_file(fname):
         except IOError as e:
             show_error(str(e))
             return
-    string = decode_bytes(string)
+    if ns.encoding:
+        fname = change_enc(fname)
+        string = change_enc(string)
     if ns.showfiles == FILES_NONE:
-        search(string.split('\n'), fname)
+        assert isinstance(string, bytes)
+        assert isinstance(fname, bytes)
+        search(string.split(b'\n'), fname)
     elif ns.showfiles == FILES_COUNT:
         ret = 0
-        for obj in pattern.finditer(string):
+        for obj in re.finditer(string):
             ret += 1
-        print('%s:%d' % (fname, ret))
+        stdout.write(b'%s:%d' % (fname, ret))
+        stdout.write(b"\n")
     elif ns.showfiles == FILES_MATCH and pattern.search(string):
-        print(fname)
+        stdout.write(fname)
+        stdout.write(b"\n")
     elif ns.showfiles == FILES_NOMATCH and not pattern.search(string):
-        print(fname)
+        stdout.write(fname)
+        stdout.write(b"\n")
 
 
 def search(lines, fname):
     number = 0
-    if lines[-1] == "":
+    if lines[-1] == b"":
         lines = lines[:-1]
     for line in lines:
+        assert isinstance(line, bytes)
         number += 1
         out = []
         if ns.withfilename or not onlyone:
             out.append(fname)
         if ns.linenumber:
-            out.append(str(number))
+            out.append(b"%d" % number)
         if ns.invertmatch:
             if not pattern.search(line):
                 out.append(line)
-                print(':'.join(out))
+                stdout.write(b':'.join(out))
+                stdout.write(b"\n")
         else:
             if not ns.highlight:
                 if not ns.separately:
@@ -109,15 +120,18 @@ def search(lines, fname):
                         if ns.onlymatching:
                             line = obj.group(0)
                         if ns.column:
-                            out.append(str(obj.start() + 1))
+                            out.append(b"%d" % (obj.start() + 1))
                         out.append(line)
-                        print(':'.join(out))
+                        stdout.write(b':'.join(out))
+                        stdout.write(b"\n")
                 else:
                     for obj in pattern.finditer(line):
                         if ns.column:
-                            print(':'.join(out + [str(obj.start() + 1), line]))
+                            stdout.write(b':'.join(out + [b"%d" % (obj.start() + 1), line]))
+                            stdout.write(b"\n")
                         else:
-                            print(':'.join(out + [line]))
+                            stdout.write(b':'.join(out + [line]))
+                            stdout.write(b"\n")
             else:
                 if not ns.separately:
                     offset = 0
@@ -125,32 +139,48 @@ def search(lines, fname):
                     for obj in pattern.finditer(line):
                         if first:
                             if ns.column:
-                                out.append(str(obj.start() + 1))
-                            print(':'.join(out), end='')
+                                out.append(b"%d" % (obj.start() + 1))
+                            stdout.write(b':'.join(out))
                             if len(out):
-                                print(':', end='')
+                                stdout.write(b':')
                             first = 0
-                        print(line[offset:obj.start()], end='')
-                        cc.output(obj.group(0), cc.YELLOW)
+                        stdout.write(line[offset:obj.start()])
+                        stdout.flush()
+                        old = cc.get_color()
+                        cc.set_color(cc.YELLOW)
+                        stdout.write(obj.group(0))
+                        stdout.flush()
+                        cc.set_color(old)
                         offset = obj.end()
                     if not first:
-                        print(line[offset:])
+                        stdout.write(line[offset:])
+                        stdout.write(b"\n")
                 else:
                     for obj in pattern.finditer(line):
                         if ns.column:
-                            print(':'.join(out + [str(obj.start() + 1)]), end='')
-                            print(':', end='')
+                            stdout.write(b':'.join(out + [b"%d" % (obj.start() + 1)]))
+                            stdout.write(b':')
                         else:
-                            print(':'.join(out), end='')
+                            stdout.write(b':'.join(out))
                             if len(out):
-                                print(':', end='')
-                        print(line[:obj.start()], end='')
-                        cc.output(obj.group(0), cc.YELLOW)
-                        print(line[obj.end():])
+                                stdout.write(b':')
+                        stdout.write(line[:obj.start()])
+                        stdout.flush()
+                        old = cc.get_color()
+                        cc.set_color(cc.YELLOW)
+                        stdout.write(obj.group(0))
+                        stdout.flush()
+                        cc.set_color(old)
+                        stdout.write(line[obj.end():])
+                        stdout.write(b"\n")
 
 def main():
     parse_command()
     global pattern
+    if ns.encoding:
+        ns.pattern = ns.pattern.encode(ns.encoding)
+    else:
+        ns.pattern = ns.pattern.encode(SYSENC)
     flags = 0
     if ns.ignorecase:
         flags |= re.IGNORECASE
@@ -164,7 +194,8 @@ def main():
     global onlyone
     onlyone = len(ns.file) == 1
     for fname in ns.file:
-        search_file(fname)
+        search_file(fname.encode(SYSENC))
 
 if __name__ == '__main__':
     main()
+
