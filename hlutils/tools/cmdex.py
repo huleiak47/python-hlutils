@@ -1,11 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-r'''
+'''
 An enhanced console for replacing cmd.exe.
 '''
 
-
-__version__ = "1.0.16"
+__version__ = "1.0.17"
 
 import os
 import sys
@@ -16,36 +15,33 @@ import re
 import random
 from functools import cmp_to_key as cmpkey
 
+from pygments.token import Token
+from pygments.lexers.shell import BatchLexer
+from prompt_toolkit.lexers import PygmentsLexer
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.contrib.regular_languages.completion import GrammarCompleter
+from prompt_toolkit.contrib.regular_languages.compiler import compile
+from prompt_toolkit import print_formatted_text, PromptSession
+from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.shortcuts.prompt import CompleteStyle
+from prompt_toolkit.styles import Style
+from prompt_toolkit.history import FileHistory
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
+from prompt_toolkit.document import Document
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.formatted_text import PygmentsTokens
+
+
 def dprint(msg):
     if 1:
         ctypes.windll.kernel32.OutputDebugStringA(str(msg))
     pass
 
+
 os.environ["PATHEXT"] = ".COM;.EXE;.BAT;.PY"
 EXE_EXTS = os.environ["PATHEXT"].lower().split(os.pathsep)
-
-from prompt_toolkit.contrib.completers import WordCompleter
-from prompt_toolkit.contrib.regular_languages.completion import GrammarCompleter
-from prompt_toolkit.contrib.regular_languages.compiler import compile
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit.shortcuts import print_tokens
-from prompt_toolkit.styles import style_from_dict
-from prompt_toolkit.token import Token
-from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.key_binding.manager import KeyBindingManager
-from prompt_toolkit.keys import Keys, Key
-from prompt_toolkit.document import Document
-
-
-
-class CmdExHistory(InMemoryHistory):
-    def append(self, string):
-        if string in self.strings:
-            self.strings.remove(string)
-        self.strings.append(string)
-
-hist_obj = CmdExHistory()
 
 CMDEXE_INT_CMDS = [
     "copy",
@@ -81,40 +77,166 @@ CMDEXE_INT_CMDS = [
 
 
 class GitCmdCompeter(WordCompleter):
-
     def __init__(self):
         GIT_CMDS = [
-            "add", "gc", "receive-pack", "add--interactive", "get-tar-commit-id",
-            "reflog", "am", "grep", "relink", "annotate", "gui", "remote", "apply",
-            "gui--askpass", "remote-ext", "archimport", "gui--askyesno",
-            "remote-fd", "archive", "gui.tcl", "remote-ftp", "bisect",
-            "hash-object", "remote-ftps", "bisect--helper", "help", "remote-http",
-            "blame", "http-backend", "remote-https", "branch", "http-fetch",
-            "repack", "bundle", "http-push", "replace", "cat-file", "imap-send",
-            "request-pull", "check-attr", "index-pack", "rerere", "check-ignore",
-            "init", "reset", "check-mailmap", "init-db", "rev-list", "check-ref-format",
-            "instaweb", "rev-parse", "checkout", "interpret-trailers", "revert",
-            "checkout-index", "log", "rm", "cherry", "ls-files", "send-email",
-            "cherry-pick", "ls-remote", "send-pack", "citool", "ls-tree",
-            "sh-i18n--envsubst", "clean", "mailinfo", "shortlog", "clone",
-            "mailsplit", "show", "column", "merge", "show-branch", "commit",
-            "merge-base", "show-index", "commit-tree", "merge-file", "show-ref",
-            "config", "merge-index", "stage", "count-objects", "merge-octopus",
-            "stash", "credential", "merge-one-file", "status", "credential-store",
-            "merge-ours", "stripspace", "credential-wincred", "merge-recursive",
-            "submodule", "cvsexportcommit", "merge-resolve", "submodule--helper",
-            "cvsimport", "merge-subtree", "subtree", "cvsserver", "merge-tree",
-            "svn", "daemon", "mergetool", "symbolic-ref", "describe",
-            "mktag", "tag", "diff", "mktree", "unpack-file", "diff-files",
-            "mv", "unpack-objects", "diff-index", "name-rev", "update-index",
-            "diff-tree", "notes", "update-ref", "difftool", "p4", "update-server-info",
-            "difftool--helper", "pack-objects", "upload-archive", "fast-export",
-            "pack-redundant", "upload-pack", "fast-import", "pack-refs", "var",
-            "fetch", "patch-id", "verify-commit", "fetch-pack", "prune",
-            "verify-pack", "filter-branch", "prune-packed", "verify-tag",
-            "fmt-merge-msg", "pull", "web--browse", "for-each-ref", "push",
-            "whatchanged", "format-patch", "quiltimport", "worktree",
-            "fsck", "read-tree", "write-tree", "fsck-objects", "rebase",
+            "add",
+            "gc",
+            "receive-pack",
+            "add--interactive",
+            "get-tar-commit-id",
+            "reflog",
+            "am",
+            "grep",
+            "relink",
+            "annotate",
+            "gui",
+            "remote",
+            "apply",
+            "gui--askpass",
+            "remote-ext",
+            "archimport",
+            "gui--askyesno",
+            "remote-fd",
+            "archive",
+            "gui.tcl",
+            "remote-ftp",
+            "bisect",
+            "hash-object",
+            "remote-ftps",
+            "bisect--helper",
+            "help",
+            "remote-http",
+            "blame",
+            "http-backend",
+            "remote-https",
+            "branch",
+            "http-fetch",
+            "repack",
+            "bundle",
+            "http-push",
+            "replace",
+            "cat-file",
+            "imap-send",
+            "request-pull",
+            "check-attr",
+            "index-pack",
+            "rerere",
+            "check-ignore",
+            "init",
+            "reset",
+            "check-mailmap",
+            "init-db",
+            "rev-list",
+            "check-ref-format",
+            "instaweb",
+            "rev-parse",
+            "checkout",
+            "interpret-trailers",
+            "revert",
+            "checkout-index",
+            "log",
+            "rm",
+            "cherry",
+            "ls-files",
+            "send-email",
+            "cherry-pick",
+            "ls-remote",
+            "send-pack",
+            "citool",
+            "ls-tree",
+            "sh-i18n--envsubst",
+            "clean",
+            "mailinfo",
+            "shortlog",
+            "clone",
+            "mailsplit",
+            "show",
+            "column",
+            "merge",
+            "show-branch",
+            "commit",
+            "merge-base",
+            "show-index",
+            "commit-tree",
+            "merge-file",
+            "show-ref",
+            "config",
+            "merge-index",
+            "stage",
+            "count-objects",
+            "merge-octopus",
+            "stash",
+            "credential",
+            "merge-one-file",
+            "status",
+            "credential-store",
+            "merge-ours",
+            "stripspace",
+            "credential-wincred",
+            "merge-recursive",
+            "submodule",
+            "cvsexportcommit",
+            "merge-resolve",
+            "submodule--helper",
+            "cvsimport",
+            "merge-subtree",
+            "subtree",
+            "cvsserver",
+            "merge-tree",
+            "svn",
+            "daemon",
+            "mergetool",
+            "symbolic-ref",
+            "describe",
+            "mktag",
+            "tag",
+            "diff",
+            "mktree",
+            "unpack-file",
+            "diff-files",
+            "mv",
+            "unpack-objects",
+            "diff-index",
+            "name-rev",
+            "update-index",
+            "diff-tree",
+            "notes",
+            "update-ref",
+            "difftool",
+            "p4",
+            "update-server-info",
+            "difftool--helper",
+            "pack-objects",
+            "upload-archive",
+            "fast-export",
+            "pack-redundant",
+            "upload-pack",
+            "fast-import",
+            "pack-refs",
+            "var",
+            "fetch",
+            "patch-id",
+            "verify-commit",
+            "fetch-pack",
+            "prune",
+            "verify-pack",
+            "filter-branch",
+            "prune-packed",
+            "verify-tag",
+            "fmt-merge-msg",
+            "pull",
+            "web--browse",
+            "for-each-ref",
+            "push",
+            "whatchanged",
+            "format-patch",
+            "quiltimport",
+            "worktree",
+            "fsck",
+            "read-tree",
+            "write-tree",
+            "fsck-objects",
+            "rebase",
         ]
         # get alias
         try:
@@ -139,18 +261,76 @@ class GitCmdCompeter(WordCompleter):
 
 
 class SvnCmdCompleter(WordCompleter):
-
     def __init__(self):
         SVN_CMDS = [
-            "add", "auth", "blame", "praise", "annotate", "ann", "cat", "changelist",
-            "cl", "checkout", "co", "cleanup", "commit", "ci", "copy", "cp",
-            "delete", "del", "remove", "rm", "diff", "di", "export", "help",
-            "?", "h", "import", "info", "list", "ls", "lock", "log", "merge",
-            "mergeinfo", "mkdir", "move", "mv", "rename", "ren", "patch", "propdel",
-            "pdel", "pd", "propedit", "pedit", "pe", "propget", "pget", "pg",
-            "proplist", "plist", "pl", "propset", "pset", "ps", "relocate",
-            "resolve", "resolved", "revert", "status", "stat", "st", "switch",
-            "sw", "unlock", "update", "up", "upgrade",
+            "add",
+            "auth",
+            "blame",
+            "praise",
+            "annotate",
+            "ann",
+            "cat",
+            "changelist",
+            "cl",
+            "checkout",
+            "co",
+            "cleanup",
+            "commit",
+            "ci",
+            "copy",
+            "cp",
+            "delete",
+            "del",
+            "remove",
+            "rm",
+            "diff",
+            "di",
+            "export",
+            "help",
+            "?",
+            "h",
+            "import",
+            "info",
+            "list",
+            "ls",
+            "lock",
+            "log",
+            "merge",
+            "mergeinfo",
+            "mkdir",
+            "move",
+            "mv",
+            "rename",
+            "ren",
+            "patch",
+            "propdel",
+            "pdel",
+            "pd",
+            "propedit",
+            "pedit",
+            "pe",
+            "propget",
+            "pget",
+            "pg",
+            "proplist",
+            "plist",
+            "pl",
+            "propset",
+            "pset",
+            "ps",
+            "relocate",
+            "resolve",
+            "resolved",
+            "revert",
+            "status",
+            "stat",
+            "st",
+            "switch",
+            "sw",
+            "unlock",
+            "update",
+            "up",
+            "upgrade",
         ]
         SVN_CMDS.sort(key=cmpkey(lambda x, y: len(x) - len(y)))
         WordCompleter.__init__(self, SVN_CMDS)
@@ -168,8 +348,12 @@ class PathCompleter(Completer):
     :param min_input_len: Don't do autocompletion when the input string is shorter.
     """
 
-    def __init__(self, only_directories=False, get_paths=None, file_filter=None,
-                 min_input_len=0, expanduser=False):
+    def __init__(self,
+                 only_directories=False,
+                 get_paths=None,
+                 file_filter=None,
+                 min_input_len=0,
+                 expanduser=False):
         assert get_paths is None or callable(get_paths)
         assert file_filter is None or callable(file_filter)
         assert isinstance(min_input_len, int)
@@ -198,8 +382,10 @@ class PathCompleter(Completer):
             # Directories where to look.
             dirname = os.path.dirname(text)
             if dirname:
-                directories = [os.path.dirname(os.path.join(p, text))
-                               for p in self.get_paths()]
+                directories = [
+                    os.path.dirname(os.path.join(p, text))
+                    for p in self.get_paths()
+                ]
             else:
                 directories = self.get_paths()
 
@@ -212,7 +398,8 @@ class PathCompleter(Completer):
                 # Look for matches in this directory.
                 if os.path.isdir(directory):
                     for filename in os.listdir(directory):
-                        if filename.lower().startswith(prefix.lower()):  # ignore case
+                        if filename.lower().startswith(
+                                prefix.lower()):  # ignore case
                             filenames.append((directory, filename))
 
             # Sort
@@ -245,9 +432,9 @@ class ExecutableCompleter(Completer):
 
     def __init__(self):
         self.pathcompleter = PathCompleter(
-            only_directories=False,
-            expanduser=True)
-        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS + list(_InternalCmds.keys()), ignore_case=True)
+            only_directories=False, expanduser=True)
+        self.wordcompleter = WordCompleter(
+            CMDEXE_INT_CMDS + list(_InternalCmds.keys()), ignore_case=True)
 
     def get_completions(self, document, complete_event):
         text_prefix = document.text_before_cursor
@@ -274,7 +461,6 @@ class ExecutableCompleter(Completer):
 
 
 class CmdExCompleter(GrammarCompleter):
-
     def __init__(self):
         # Compile grammar.
         g = compile(
@@ -344,27 +530,35 @@ class CmdExCompleter(GrammarCompleter):
                 )
             """,
             escape_funcs={
-                'double_quoted_filename': (lambda string: string.replace('"', '\\"')),
-                'double_quoted_executable': (lambda string: string.replace('"', '\\"')),
+                'double_quoted_filename':
+                (lambda string: string.replace('"', '\\"')),
+                'double_quoted_executable':
+                (lambda string: string.replace('"', '\\"')),
             },
             unescape_funcs={
                 # XXX: not enterily correct.
-                'double_quoted_filename': (lambda string: string.replace('\\"', '"')),
-                'double_quoted_executable': (lambda string: string.replace('\\"', '"')),
+                'double_quoted_filename':
+                (lambda string: string.replace('\\"', '"')),
+                'double_quoted_executable':
+                (lambda string: string.replace('\\"', '"')),
             })
 
         # Create GrammarCompleter
         super(CmdExCompleter, self).__init__(
-            g,
-            {
-                'executable': ExecutableCompleter(),
-                'double_quoted_executable': ExecutableCompleter(),
-                'filename': PathCompleter(only_directories=False, expanduser=True),
-                'double_quoted_filename': PathCompleter(only_directories=False, expanduser=True),
-                'git_command': GitCmdCompeter(),
-                'svn_command': SvnCmdCompleter(),
+            g, {
+                'executable':
+                ExecutableCompleter(),
+                'double_quoted_executable':
+                ExecutableCompleter(),
+                'filename':
+                PathCompleter(only_directories=False, expanduser=True),
+                'double_quoted_filename':
+                PathCompleter(only_directories=False, expanduser=True),
+                'git_command':
+                GitCmdCompeter(),
+                'svn_command':
+                SvnCmdCompleter(),
             })
-
 
 
 def ch_title(title=None):
@@ -387,12 +581,14 @@ def init():
     dump_banner()
     os.environ["ERRORLEVELEX"] = "0"
 
+
 ##-------------------------------##
 
 
 def process_exit(cmd):
     "exit"
     sys.exit(0)
+
 
 _last_cwd = os.getcwd()
 
@@ -407,6 +603,7 @@ def _ch_dir(cwd):
 def expand_env(param):
     def repl(mobj):
         return os.environ.get(mobj.group(0)[1:-1], mobj.group(0))
+
     return re.sub(r"%[^%]*%", repl, param)
 
 
@@ -452,10 +649,8 @@ def process_set(cmd):
             if not count:
                 print("Environment variable '%s' is not defined." % param)
 
-def process_history(cmd):
-    for cmd in hist_obj.strings:
-        print(cmd)
-
+def process_pwd(cmd):
+    print(os.getcwd())
 
 
 _InternalCmds = {
@@ -465,7 +660,8 @@ _InternalCmds = {
     "cd": process_cd,
     "set": process_set,
     "env": process_set,
-    "hist": process_history,
+    "pwd": process_pwd,
+    # "hist": process_history,
 }
 
 
@@ -491,6 +687,7 @@ def split_cmd_args(cmd):
     except Exception:
         end = len(cmd)
     return cmd[0:end], cmd[end:]
+
 
 g_batch = None
 
@@ -558,7 +755,7 @@ def expand_exefile(cmdf):
             break
 
     if cmdf.lower().endswith(".py"):
-        cmdf = 'python.exe "%s"' % cmdf
+        cmdf = 'py.exe "%s"' % cmdf
     elif sys.getwindowsversion().major < 6 and cmdf.lower().endswith(".bat"):
         cmdf = replace_batch_file(cmdf)
         g_batch = cmdf
@@ -567,6 +764,7 @@ def expand_exefile(cmdf):
         cmdf = origcmd
     dprint("exefile expand as: " + cmdf)
     return cmdf
+
 
 import ply.lex as lex
 
@@ -601,6 +799,7 @@ def t_STRING(t):
 def t_error(t):
     print("Illegal char '%s'" % t.value[0])
     t.lexer.skip(1)
+
 
 lexer = lex.lex()
 
@@ -663,95 +862,51 @@ def call_sys_cmd(cmd):
     finally:
         ch_title()
 
-SUMMARY_STYLE = style_from_dict({
-    Token.NORMAL: "#00FF00",
-    Token.ALERM: "#FF0000",
+
+SUMMARY_STYLE = Style.from_dict({
+    "pygments.normal": "#00FF00",
+    "pygments.alerm": "#FF0000",
 })
 
 
 def dump_summary(retcode, start, end):
-    tokens = [
-        (Token.NORMAL, "\n" + "=" * 80 + "\n[Return "),
-        (Token.NORMAL if retcode == 0 else Token.ALERM, "%d" % retcode),
-        (Token.NORMAL, "] [Start %s] [End %s] [Elapsed %.3f sec]\n" %
-         (
-             time.strftime("%H:%M:%S", time.localtime(start)) +
-             ".%d" % int(1000 * (start - int(start))),
-             time.strftime("%H:%M:%S", time.localtime(end)) +
-             ".%d" % int(1000 * (end - int(end))),
-             end - start
-         )
-         )
-    ]
-    print_tokens(tokens, style=SUMMARY_STYLE)
+    tokens = [(Token.NORMAL, "\n" + "=" * 80 + "\n[Return "),
+              (Token.NORMAL if retcode == 0 else Token.ALERM, "%d" % retcode),
+              (Token.NORMAL, "] [Start %s] [End %s] [Elapsed %.3f sec]\n" %
+               (time.strftime("%H:%M:%S", time.localtime(start)) +
+                ".%d" % int(1000 * (start - int(start))),
+                time.strftime("%H:%M:%S", time.localtime(end)) +
+                ".%d" % int(1000 * (end - int(end))), end - start))]
+    print_formatted_text(PygmentsTokens(tokens), style=SUMMARY_STYLE)
 
-default_input = ""
 
 def get_prompt_args():
-    key_bindings_manager = KeyBindingManager.for_prompt()
-
-    @key_bindings_manager.registry.add_binding(Keys.Escape)
-    def h1(event):
-        """
-        When ESC has been pressed, clear the input text.
-        """
-        event.cli.current_buffer.cursor_right(999)
-        event.cli.current_buffer.delete_before_cursor(999)
-
-    @key_bindings_manager.registry.add_binding(Keys.ControlV)
-    def h2(event):
-        """
-        When Ctrl-V has been pressed, insert clipboard text to the cursor.
-        """
-        from hlutils import get_clipboard_text
-        text = get_clipboard_text()
-        event.cli.current_buffer.insert_text(text)
-
-    @key_bindings_manager.registry.add_binding(Keys.ControlO)
-    def h3(event):
-        """
-        When Ctrl-O has been pressed, open a Vim process to select a history
-        command.
-        """
-        import subprocess as sp
-        import random
-        rcfile = os.path.dirname(__file__) + "\\history.vim"
-        randval = random.randint(1000000, 9999999)
-        histfile = os.path.expandvars("$TMP/cmdex_%d.hist" % randval)
-        selectfile = os.path.expandvars("$TMP/cmdex_%d.sel" % randval)
-        with open(histfile, "w") as f:
-            for cmd in hist_obj.strings:
-                print(cmd, file=f)
-
-        os.system("vim.exe -R --noplugin + -u %s -- %s" % (rcfile, histfile))
-        os.remove(histfile)
-
-        global default_input
-        if os.path.exists(selectfile):
-            text = open(selectfile).read().strip()
-            default_input = text
-            os.remove(selectfile)
-
-        event.cli.current_buffer.cursor_right(999)
-        event.cli.current_buffer.delete_before_cursor(999)
-        event.cli.set_return_value(Document(""))
-
     args = {
-        "style": style_from_dict({
-            Token.PATH: "#80C0FF",
-            Token.HOST: "#00FF00",
-            Token.TIP: "#FF0000",
+        "style":
+        Style.from_dict({
+            "host": "#00FF00",
+            "path": "#8080C0",
+            "tip": "#FF0000",
         }),
-        "get_prompt_tokens": lambda cli: [
-            (Token.HOST, "%s@%s  " %
-             (os.getenv("USERNAME", ""), os.getenv("COMPUTERNAME", ""))),
-            (Token.PATH, "%s\n" % os.getcwd().replace("\\", "/")),
-            (Token.TIP, "$ "),
+        "message": lambda: [
+            ("class:host", "%s@%s: " % (os.getenv("USERNAME", ""),
+                                        os.getenv("COMPUTERNAME", ""))),
+            ("class:path", "%s\n" % os.getcwd().replace("\\", "/")),
+            ("class:tip", "$ "),
         ],
-        "completer": CmdExCompleter(),
-        "display_completions_in_columns": True,
-        "history": hist_obj,
-        "key_bindings_registry": key_bindings_manager.registry,
+        "complete_in_thread":
+        True,
+        "lexer":
+        PygmentsLexer(BatchLexer),
+        "completer":
+        CmdExCompleter(),
+        "history":
+        FileHistory(os.environ["USERPROFILE"] + "\\.cmdex.hist"),
+        "auto_suggest":
+        AutoSuggestFromHistory(),
+        "enable_open_in_editor": True,
+        "complete_style": CompleteStyle.MULTI_COLUMN,
+        "editing_mode": "VI",
     }
     return args
 
@@ -759,13 +914,11 @@ def get_prompt_args():
 def main():
     init()
     args = get_prompt_args()
+    session = PromptSession(**args)
     while True:
         try:
             try:
-                global default_input
-                args["default"] = default_input
-                default_input = ""
-                cmd = prompt(**args).strip()
+                cmd = session.prompt().strip()
             except KeyboardInterrupt:
                 print()
                 continue
@@ -781,9 +934,9 @@ def main():
             traceback.print_exc()
             print(type(e).__name__, ":", str(e))
 
+
 if __name__ == "__main__":
     if sys.platform.startswith("linux"):
         print("Linux is not supported yet.")
         sys.exit(1)
     main()
-

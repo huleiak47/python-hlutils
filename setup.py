@@ -9,7 +9,7 @@ from setuptools import setup
 from hlutils import __version__ as VERSION
 
 NAME = 'hlutils'
-DESCRIPTION = 'Useful python functions and scripts written by Hu Lei.'
+DESCRIPTION = 'Useful python functions and scripts written by James Hu.'
 LICENSE = 'Apache License 2.0'
 PLATFORMS = ['win32']
 
@@ -33,7 +33,7 @@ setup(
     entry_points={
         "console_scripts": consoles,
     },
-    install_requires=["prompt_toolkit>=0.60",
+    install_requires=["prompt_toolkit>=2.0",
                       "ply>=3.0",
                      "texttable>=0.8"],
 )

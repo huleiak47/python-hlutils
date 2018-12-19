@@ -90,7 +90,8 @@ def gen_html(ns):
             "-t",
             "html",
             "-s",
-            "-S",
+            "-f",
+            "markdown+smart"
             ]
     if ns.template:
         cmds.append("--template=" + ns.template)
@@ -149,7 +150,8 @@ def gen_pdf(ns):
             "-t",
             "html",
             "-s",
-            "-S",
+            "-f",
+            "markdown+smart"
             ]
     if ns.template:
         cmds.append("--template=" + ns.template)
@@ -196,7 +198,8 @@ def gen_docx(ns):
             "-t",
             "docx",
             "-s",
-            "-S",
+            "-f",
+            "markdown+smart"
             ]
     if ns.variable:
         for v in ns.variable:
