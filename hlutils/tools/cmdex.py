@@ -4,7 +4,7 @@
 An enhanced console for replacing cmd.exe.
 '''
 
-__version__ = "1.0.17"
+__version__ = "1.0.18"
 
 import os
 import sys
@@ -33,6 +33,8 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.formatted_text import PygmentsTokens
 
+from hlutils import get_clipboard_text
+
 
 def dprint(msg):
     if 1:
@@ -40,7 +42,7 @@ def dprint(msg):
     pass
 
 
-os.environ["PATHEXT"] = ".COM;.EXE;.BAT;.PY"
+os.environ["PATHEXT"] = ".COM;.EXE;.BAT;.CMD;.VBS;.VBE;.MSC;.PY;.PYW"
 EXE_EXTS = os.environ["PATHEXT"].lower().split(os.pathsep)
 
 CMDEXE_INT_CMDS = [
@@ -649,6 +651,7 @@ def process_set(cmd):
             if not count:
                 print("Environment variable '%s' is not defined." % param)
 
+
 def process_pwd(cmd):
     print(os.getcwd())
 
@@ -881,6 +884,14 @@ def dump_summary(retcode, start, end):
 
 
 def get_prompt_args():
+    kb = KeyBindings()
+
+    @kb.add("c-v")
+    def _(event):
+        txt = get_clipboard_text()
+        if txt:
+            event.current_buffer.insert_text(txt.replace('\r', ''))
+
     args = {
         "style":
         Style.from_dict({
@@ -906,7 +917,8 @@ def get_prompt_args():
         AutoSuggestFromHistory(),
         "enable_open_in_editor": True,
         "complete_style": CompleteStyle.MULTI_COLUMN,
-        "editing_mode": "VI",
+        "editing_mode": "EMACS",
+        "key_bindings": kb,
     }
     return args
 
