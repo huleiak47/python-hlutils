@@ -4,7 +4,7 @@
 An enhanced console for replacing cmd.exe.
 '''
 
-__version__ = "1.0.18"
+__version__ = "1.0.19"
 
 import os
 import sys
@@ -349,7 +349,6 @@ class PathCompleter(Completer):
                         when no filtering has to be done.
     :param min_input_len: Don't do autocompletion when the input string is shorter.
     """
-
     def __init__(self,
                  only_directories=False,
                  get_paths=None,
@@ -431,12 +430,12 @@ class ExecutableCompleter(Completer):
     """
     Complete only excutable files in the current path.
     """
-
     def __init__(self):
-        self.pathcompleter = PathCompleter(
-            only_directories=False, expanduser=True)
-        self.wordcompleter = WordCompleter(
-            CMDEXE_INT_CMDS + list(_InternalCmds.keys()), ignore_case=True)
+        self.pathcompleter = PathCompleter(only_directories=False,
+                                           expanduser=True)
+        self.wordcompleter = WordCompleter(CMDEXE_INT_CMDS +
+                                           list(_InternalCmds.keys()),
+                                           ignore_case=True)
 
     def get_completions(self, document, complete_event):
         text_prefix = document.text_before_cursor
@@ -899,9 +898,10 @@ def get_prompt_args():
             "path": "#8080C0",
             "tip": "#FF0000",
         }),
-        "message": lambda: [
-            ("class:host", "%s@%s: " % (os.getenv("USERNAME", ""),
-                                        os.getenv("COMPUTERNAME", ""))),
+        "message":
+        lambda: [
+            ("class:host", "%s@%s: " %
+             (os.getenv("USERNAME", ""), os.getenv("COMPUTERNAME", ""))),
             ("class:path", "%s\n" % os.getcwd().replace("\\", "/")),
             ("class:tip", "$ "),
         ],
@@ -915,10 +915,12 @@ def get_prompt_args():
         FileHistory(os.environ["USERPROFILE"] + "\\.cmdex.hist"),
         "auto_suggest":
         AutoSuggestFromHistory(),
-        "enable_open_in_editor": True,
-        "complete_style": CompleteStyle.MULTI_COLUMN,
-        "editing_mode": "EMACS",
-        "key_bindings": kb,
+        "enable_open_in_editor":
+        True,
+        "complete_style":
+        CompleteStyle.MULTI_COLUMN,
+        "key_bindings":
+        kb,
     }
     return args
 
